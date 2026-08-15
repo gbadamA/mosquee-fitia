@@ -1,0 +1,28 @@
+{
+  "name": "mosquee-fitia",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Système de gestion de la Mosquée Fitia (Petro Ivoire, Abobo) — mobile (Expo) + dashboard (Next.js) + Supabase",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "mobile": "pnpm --filter mobile start",
+    "dashboard": "pnpm --filter dashboard dev",
+    "db:types": "supabase gen types typescript --local > packages/supabase/src/database.types.ts",
+    "db:push": "supabase db push",
+    "typecheck": "pnpm --filter dashboard exec tsc --noEmit && pnpm --filter mobile exec tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/react": "19.1.10",
+      "@types/react-dom": "19.1.7",
+      "react": "19.1.0",
+      "react-dom": "19.1.0"
+    }
+  }
+}

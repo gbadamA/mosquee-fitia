@@ -1,0 +1,19 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "@/*": ["./*"],
+      "@fitia/design-tokens": ["../../packages/design-tokens/src/index.ts"],
+      "@fitia/shared": ["../../packages/shared/src/index.ts"],
+      "@fitia/supabase": ["../../packages/supabase/src/index.ts"]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts",
+    "nativewind-env.d.ts"
+  ]
+}

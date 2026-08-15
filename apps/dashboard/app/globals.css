@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light dark;
+
+  /* Couleurs de marque par défaut, en canaux RVB pour Tailwind.
+     Surchargées à l'exécution par <BrandTheme> avec les couleurs de la mosquée. */
+  --c-primary: 11 122 59;
+  --c-primary-hover: 8 97 48;
+  --c-secondary: 201 162 39;
+  --c-secondary-hover: 169 135 28;
+
+  /* Dégradé signature (valeurs hex, utilisées telles quelles par `bg-emerald`). */
+  --g-start: #064e3b;
+  --g-mid: #0b7a3b;
+  --g-end: #c9a227;
+}
+
+body {
+  font-family: Inter, system-ui, sans-serif;
+}
+
+/* Texte arabe (noms de prières, date Hijri) — sens de lecture droite→gauche. */
+.arabic {
+  font-family: Amiri, "Scheherazade New", serif;
+  direction: rtl;
+  unicode-bidi: isolate;
+}
+
+/* ===========================================================================
+   Motif géométrique islamique — trame discrète pour les en-têtes en dégradé.
+   SVG inline (data URI) : aucun asset externe, aucune requête réseau.
+   =========================================================================== */
+.pattern-islamic {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.14' stroke-width='1'%3E%3Cpath d='M30 0 L60 30 L30 60 L0 30 Z'/%3E%3Cpath d='M30 10 L50 30 L30 50 L10 30 Z'/%3E%3Cpath d='M0 0 L60 60 M60 0 L0 60'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 60px 60px;
+}
+
+/* ===========================================================================
+   Soulèvement des cadres au survol — appliqué à TOUS les compartiments.
+   Couvre : cartes sémantiques (article/section/li bordés), .shadow-card et .lift.
+   Les champs de formulaire (input/select/textarea) sont exclus volontairement.
+   Respecte le réglage système « réduire les animations ».
+   =========================================================================== */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .shadow-card,
+  .lift,
+  article[class*="rounded-"][class*="border"],
+  section[class*="rounded-"][class*="border"],
+  li[class*="rounded-"][class*="border"] {
+    transition:
+      transform 0.18s ease,
+      box-shadow 0.18s ease,
+      border-color 0.18s ease;
+    will-change: transform;
+  }
+
+  .shadow-card:hover,
+  .lift:hover,
+  article[class*="rounded-"][class*="border"]:hover,
+  section[class*="rounded-"][class*="border"]:hover,
+  li[class*="rounded-"][class*="border"]:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 36px rgb(var(--c-primary) / 0.22);
+  }
+
+  /* Jamais de soulèvement sur les champs de saisie ni les zones défilantes. */
+  input:hover,
+  select:hover,
+  textarea:hover,
+  [class*="overflow-y-auto"]:hover {
+    transform: none;
+    box-shadow: none;
+  }
+}

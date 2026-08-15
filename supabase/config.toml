@@ -1,0 +1,60 @@
+project_id = "mosquee-fitia"
+
+# Ports en 5413x : Windows réserve dynamiquement 54287-54386 (Hyper-V/WSL), ce qui bloque
+# les ports Supabase par défaut (5432x). 5412x est déjà pris par le projet asso-jeunes,
+# donc ce projet prend la plage suivante — les deux stacks peuvent tourner en parallèle.
+[api]
+enabled = true
+port = 54131
+schemas = ["public"]
+extra_search_path = ["public"]
+
+[db]
+port = 54132
+major_version = 15
+
+[studio]
+enabled = true
+port = 54133
+
+# `[inbucket]` est déprécié dans les CLI récentes → `[local_smtp]`.
+[local_smtp]
+port = 54134
+
+[analytics]
+enabled = true
+port = 54137
+
+[auth]
+enabled = true
+# Le dashboard tourne sur 3030 (3000 est occupé par d'autres projets du poste).
+site_url = "http://localhost:3031"
+additional_redirect_urls = ["http://localhost:3031"]
+
+[auth.email]
+enable_signup = true
+# En local : pas de confirmation, on teste vite. En prod : true.
+enable_confirmations = false
+
+[auth.sms]
+enable_signup = true
+enable_confirmations = false
+
+# Provider Twilio en placeholder : requis pour activer le login téléphone,
+# mais AUCUN SMS n'est envoyé car le test_otp ci-dessous intercepte les numéros de test.
+# En prod : vraies clés Twilio.
+[auth.sms.twilio]
+enabled = true
+account_sid = "placeholder"
+message_service_sid = "placeholder"
+auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
+
+# OTP de test en local : ce numéro reçoit toujours le code 123456 (aucun SMS réel).
+[auth.sms.test_otp]
+22507000000 = "123456"
+
+[realtime]
+enabled = true
+
+[storage]
+enabled = true

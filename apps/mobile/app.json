@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "Mosquée Fitia",
+    "slug": "mosquee-fitia",
+    "scheme": "mosqueefitia",
+    "version": "0.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#071410",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "ci.mosquee.fitia"
+    },
+    "android": {
+      "package": "ci.mosquee.fitia",
+      "adaptiveIcon": {
+        "backgroundColor": "#071410"
+      }
+    },
+    "plugins": ["expo-router", "expo-notifications"],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {}
+    }
+  }
+}
