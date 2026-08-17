@@ -119,8 +119,7 @@ Déployer les fonctions serveur :
 npx supabase@latest functions deploy create-member send-push
 ```
 
-⚠️ **Ne PAS déployer `dev-login`** : c'est le contournement OTP de développement.
-Il refuse de s'exécuter hors instance locale, mais autant ne pas l'envoyer du tout.
+Ce sont les deux seules fonctions du projet.
 
 ### 2. Déployer le tableau de bord sur Render
 
@@ -150,14 +149,14 @@ modifier impose de **reconstruire** le service — un redémarrage ne suffit pas
 
 ### 4. À faire avant la mise en service réelle
 
-- [x] ~~Rétablir l'OTP~~ — fait le 2026-08-08, `OTP_ENABLED = true`
-- [ ] **Configurer un fournisseur SMS** — sans lui, l'OTP rétabli ne peut envoyer aucun
-      code et la connexion des fidèles est bloquée en production.
+- [x] ~~Rétablir l'OTP~~ — fait le 2026-08-08
+- [x] ~~Retirer le contournement de connexion~~ — `dev-login` et le code client
+      supprimés le 2026-08-08 ; il n'existe plus qu'un seul chemin de connexion
+- [ ] **Configurer un fournisseur SMS** — sans lui, l'OTP ne peut envoyer aucun code
+      et **aucun fidèle ne pourra se connecter** en production.
       Supabase Cloud → **Authentication → Providers → Phone** (Twilio, Vonage…).
       En local, seul `+22507000000` fonctionne, avec le code `123456`.
 - [ ] Pointer `apps/mobile/.env` sur l'URL Supabase Cloud, puis build EAS
-- [ ] Vérifier que `supabase/functions/dev-login` **n'est pas** déployée
-      (`npx supabase functions list`) — elle n'a plus aucun usage.
 
 ---
 

@@ -3,20 +3,20 @@ import { View, Text, TextInput, Pressable, ActivityIndicator, KeyboardAvoidingVi
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { Moon, ArrowRight, TriangleAlert } from "lucide-react-native";
+import { Moon, ArrowRight } from "lucide-react-native";
 import { normalizePhoneCI } from "@fitia/shared";
 import { supabase, isConfigured } from "../../lib/supabase";
 import { useMosque, useBrand } from "../../lib/mosque";
 import { useThemeColors } from "../../lib/theme";
-import { OTP_ENABLED, OTP_DISABLED_NOTICE } from "../../lib/auth-mode";
 
 /**
- * Connexion des fidèles.
+ * Connexion des fidèles : numéro de téléphone, puis code reçu par SMS.
  *
- * Deux chemins, pilotés par l'unique constante `OTP_ENABLED` (`lib/auth-mode.ts`) :
- *   - `true`  → numéro puis code reçu par SMS (comportement normal) ;
- *   - `false` → connexion directe, sans code, via l'Edge Function `dev-login`.
- *     Contournement de développement, temporaire et volontairement signalé à l'écran.
+ * Il n'existe volontairement qu'UN SEUL chemin. Un contournement « sans code »
+ * a existé pour accélérer les tests sur émulateur (constante `OTP_ENABLED` +
+ * Edge Function `dev-login`) ; il a été retiré le 2026-08-08 avec la fonction
+ * qui le servait. Le rétablir signifierait réintroduire une porte dérobée : le
+ * code se retrouve dans l'historique git (commit `708864e` et ses parents).
  */
 export default function Login() {
   const colors = useThemeColors();
@@ -27,25 +27,18 @@ export default function Login() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  /** Valide le numéro et renvoie sa forme normalisée, ou `null` si invalide. */
-  function checkedPhone(): string | null {
+  async function sendCode() {
     setError(null);
+
     const normalized = normalizePhoneCI(phone);
     if (normalized.length < 12) {
       setError("Numéro incomplet.");
-      return null;
+      return;
     }
     if (!supabase) {
       setError("Application non configurée (.env manquant).");
-      return null;
+      return;
     }
-    return normalized;
-  }
-
-  /** Parcours normal : envoi du code, puis écran de vérification. */
-  async function sendCode() {
-    const normalized = checkedPhone();
-    if (!normalized || !supabase) return;
 
     setBusy(true);
     const { error: authError } = await supabase.auth.signInWithOtp({ phone: normalized });
@@ -56,48 +49,6 @@ export default function Login() {
       return;
     }
     router.push({ pathname: "/(auth)/verify", params: { phone: normalized } });
-  }
-
-  /**
-   * Parcours sans code. `dev-login` crée ou retrouve le compte et lui attribue un
-   * mot de passe éphémère, dont on se sert immédiatement pour ouvrir la session.
-   * Le mot de passe est régénéré à chaque appel : il n'est jamais réutilisable.
-   */
-  async function signInWithoutCode() {
-    const normalized = checkedPhone();
-    if (!normalized || !supabase) return;
-
-    setBusy(true);
-    const { data, error: fnError } = await supabase.functions.invoke("dev-login", {
-      body: { phone: normalized },
-    });
-
-    const failure = fnError?.message ?? (data as { error?: string } | null)?.error;
-    if (failure) {
-      setBusy(false);
-      setError(failure);
-      return;
-    }
-
-    const password = (data as { password?: string } | null)?.password;
-    if (!password) {
-      setBusy(false);
-      setError("Réponse inattendue du serveur.");
-      return;
-    }
-
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      phone: normalized,
-      password,
-    });
-    setBusy(false);
-
-    if (authError) {
-      setError(authError.message);
-      return;
-    }
-    // Le RootNavigator bascule vers (tabs) dès que la session existe.
-    router.replace("/(tabs)");
   }
 
   return (
@@ -131,22 +82,12 @@ export default function Login() {
           Bienvenue
         </Text>
         <Text className="mb-6 text-light-muted dark:text-dark-muted">
-          {OTP_ENABLED
-            ? "Entrez votre numéro pour recevoir un code de vérification par SMS."
-            : "Entrez votre numéro pour accéder à l'application."}
+          Entrez votre numéro pour recevoir un code de vérification par SMS.
         </Text>
 
         {!isConfigured && (
           <View className="mb-5 rounded-md border border-warning/40 bg-warning/10 p-4">
             <Text className="text-warning">Backend non configuré — renseignez .env</Text>
-          </View>
-        )}
-
-        {/* Le contournement doit se voir : personne ne doit le découvrir en production. */}
-        {!OTP_ENABLED && (
-          <View className="mb-5 flex-row items-start gap-3 rounded-md border border-warning/40 bg-warning/10 p-4">
-            <TriangleAlert color="#F59E0B" size={18} />
-            <Text className="flex-1 text-caption text-warning">{OTP_DISABLED_NOTICE}</Text>
           </View>
         )}
 
@@ -161,7 +102,7 @@ export default function Login() {
         />
 
         <Pressable
-          onPress={OTP_ENABLED ? sendCode : signInWithoutCode}
+          onPress={sendCode}
           disabled={busy}
           className="flex-row items-center justify-center gap-2 rounded-full bg-primary px-6 py-4 active:opacity-80"
         >
@@ -169,9 +110,7 @@ export default function Login() {
             <ActivityIndicator color="#fff" />
           ) : (
             <>
-              <Text className="text-base font-semibold text-white">
-                {OTP_ENABLED ? "Recevoir le code" : "Se connecter"}
-              </Text>
+              <Text className="text-base font-semibold text-white">Recevoir le code</Text>
               <ArrowRight color="#fff" size={18} />
             </>
           )}

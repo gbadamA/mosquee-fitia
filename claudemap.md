@@ -69,20 +69,17 @@
 | **Diffusion dashboard → mobile** | **Supabase Realtime** — le mobile s'abonne à `prayer_times`, `announcements`, `events` et reçoit les nouveautés instantanément ; complété par push Expo |
 | Auth | **Supabase Auth** — téléphone + OTP SMS (fidèles), email + mot de passe (staff) |
 
-> ✅ **OTP RÉTABLI le 2026-08-08.** `apps/mobile/lib/auth-mode.ts` → `OTP_ENABLED = true` :
-> le fidèle saisit son numéro, reçoit un code par SMS, puis le saisit sur l'écran de
-> vérification. C'est le seul mode acceptable pour une version distribuée.
+> ✅ **OTP : un seul chemin de connexion.** Le fidèle saisit son numéro, reçoit un code
+> par SMS, puis le saisit sur l'écran de vérification. Il n'existe plus aucun mode
+> alternatif : le contournement « sans code » (constante `OTP_ENABLED` + Edge Function
+> `dev-login`) a été **entièrement retiré le 2026-08-08**, code client compris.
+> Le réintroduire signifierait rouvrir une porte dérobée — le code reste dans
+> l'historique git si le besoin se représentait.
 >
 > ⚠️ **En production, les SMS ne partent pas tout seuls.** Il faut un fournisseur configuré
 > dans Supabase Cloud → **Authentication → Providers → Phone** (Twilio, Vonage…). Sans lui,
 > « Recevoir le code » échouera pour tout numéro absent de `[auth.sms.test_otp]`
-> (en local : `+22507000000`, code `123456`).
->
-> **Contournement de développement**, si le besoin revient : passer `OTP_ENABLED` à `false`.
-> Le fidèle entre alors **sans code** via l'Edge Function `dev-login`. Basculer la constante
-> suffit — écran de connexion, écran de vérification et bandeau d'avertissement suivent.
-> ⛔ `dev-login` ne doit JAMAIS être déployée. Elle refuse déjà de s'exécuter hors instance
-> locale (`SUPABASE_URL` non locale → 403), mais autant ne pas l'envoyer.
+> (en local : `+22507000000`, code `123456`) et **aucun fidèle ne pourra se connecter**.
 | Sécurité | **Row Level Security** par rôle, via les fonctions `auth_role()` / `is_staff()` / `is_admin()` |
 | Fichiers | **Supabase Storage** (photos, reçus PDF) |
 | Logique serveur | **Edge Functions** (Deno) — push, création de compte staff, reçus |
@@ -366,8 +363,7 @@ API NestJS à héberger. Ici **Supabase EST le backend** : il n'y a pas d'API à
 ⚠️ **Ne JAMAIS créer de PostgreSQL chez Render** : le plan gratuit expire et emporte
 les données. C'est ce qui a mis PREVENTIX 360 hors service.
 
-⛔ **Ne pas déployer `supabase/functions/dev-login`** : c'est le contournement OTP de
-développement. Il refuse de s'exécuter hors instance locale, mais autant ne pas l'envoyer.
+Les deux seules fonctions à déployer sont `create-member` et `send-push`.
 
 **Trois contraintes de construction, toutes découvertes à l'usage :**
 1. `dockerContext: .` — la racine du dépôt, pas `apps/dashboard`, sinon les imports

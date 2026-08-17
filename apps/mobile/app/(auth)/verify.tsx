@@ -1,11 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { View, Text, TextInput, Pressable, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ShieldCheck } from "lucide-react-native";
 import { supabase } from "../../lib/supabase";
 import { useThemeColors } from "../../lib/theme";
-import { OTP_ENABLED } from "../../lib/auth-mode";
 
 export default function Verify() {
   const colors = useThemeColors();
@@ -14,12 +13,6 @@ export default function Verify() {
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Écran sans objet quand l'OTP est désactivé : on renvoie à la connexion plutôt
-  // que de laisser un cul-de-sac atteignable par le bouton retour.
-  useEffect(() => {
-    if (!OTP_ENABLED) router.replace("/(auth)/login");
-  }, [router]);
 
   async function verify() {
     setError(null);
