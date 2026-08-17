@@ -87,6 +87,76 @@ Même test avec **Diffusion** → l'annonce apparaît en direct dans l'onglet **
 
 ---
 
+## Hébergement — Render (plan gratuit)
+
+⚠️ **Ce déploiement ne ressemble pas à celui de HadjChanges, et c'est normal.**
+HadjChanges héberge une API NestJS qu'il faut faire tourner quelque part. Ici,
+**Supabase EST le backend** : il n'y a pas d'API à héberger.
+
+| Composant | Où |
+|---|---|
+| Tableau de bord Next.js | **Render** (`render.yaml`, plan gratuit) |
+| Base, Auth, Realtime, Storage | **Supabase Cloud** (plan gratuit) |
+| Edge Functions `create-member`, `send-push` | **Supabase**, pas Render |
+| Application mobile | build **EAS** — aucun serveur web |
+
+### 1. Créer le projet Supabase Cloud
+
+Sur [supabase.com](https://supabase.com), nouveau projet, région Europe.
+Puis pousser le schéma depuis ce dépôt :
+
+```bash
+npx supabase@latest link --project-ref <ref-du-projet>
+```
+
+```bash
+npx supabase@latest db push
+```
+
+Déployer les fonctions serveur :
+
+```bash
+npx supabase@latest functions deploy create-member send-push
+```
+
+⚠️ **Ne PAS déployer `dev-login`** : c'est le contournement OTP de développement.
+Il refuse de s'exécuter hors instance locale, mais autant ne pas l'envoyer du tout.
+
+### 2. Déployer le tableau de bord sur Render
+
+Sur [render.com](https://render.com) → **New → Blueprint**, pointer le dépôt
+`gbadamA/mosquee-fitia`. Render lit `render.yaml` et crée le service.
+
+Renseigner ensuite les deux secrets dans l'interface Render
+(**Project Settings → API** côté Supabase) :
+
+| Variable | Valeur |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | l'URL du projet Supabase |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | la clé `anon` / `public` |
+
+⚠️ Ces deux valeurs sont **inscrites dans le bundle à la construction**. Les
+modifier impose de **reconstruire** le service — un redémarrage ne suffit pas.
+
+### 3. Ce que le plan gratuit implique
+
+- **Ne créez PAS de PostgreSQL chez Render.** Le gratuit expire et emporte les
+  données — c'est ce qui a mis PREVENTIX 360 hors service. La base reste chez Supabase.
+- **Le service s'endort** après ~15 min sans trafic et met ~50 s à se réveiller.
+  Le bureau verra une première page lente après une pause ; aucune donnée n'est
+  en jeu, tout est chez Supabase.
+- **Le disque est éphémère** — sans conséquence ici : le tableau de bord n'écrit
+  rien localement, les justificatifs vont dans Supabase Storage.
+
+### 4. À faire avant la mise en service réelle
+
+- [ ] Rétablir l'OTP : `OTP_ENABLED = true` dans `apps/mobile/lib/auth-mode.ts`
+- [ ] Renseigner les vraies clés Twilio pour les SMS (`supabase/config.toml` en local,
+      **Authentication → Providers → Phone** sur Supabase Cloud)
+- [ ] Pointer `apps/mobile/.env` sur l'URL Supabase Cloud, puis build EAS
+
+---
+
 ## Pièges connus (hérités d'`asso-jeunes`)
 
 - Ne **jamais** épingler les versions natives Expo à la main → `expo install --fix`.

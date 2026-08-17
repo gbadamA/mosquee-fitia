@@ -351,6 +351,40 @@ et met en cache la dernière ligne reçue pour fonctionner hors connexion.
 
 ---
 
+## 8 bis. Hébergement — Render (plan gratuit)
+
+⚠️ **Ne pas calquer sur HadjChanges.** HadjChanges déploie DEUX services car il a une
+API NestJS à héberger. Ici **Supabase EST le backend** : il n'y a pas d'API à déployer.
+
+| Composant | Où |
+|---|---|
+| Tableau de bord Next.js | **Render** — `render.yaml` + `apps/dashboard/Dockerfile` |
+| PostgreSQL, Auth, Realtime, Storage | **Supabase Cloud** |
+| Edge Functions `create-member`, `send-push` | **Supabase**, jamais Render |
+| Application mobile | build **EAS** — aucun serveur web |
+
+⚠️ **Ne JAMAIS créer de PostgreSQL chez Render** : le plan gratuit expire et emporte
+les données. C'est ce qui a mis PREVENTIX 360 hors service.
+
+⛔ **Ne pas déployer `supabase/functions/dev-login`** : c'est le contournement OTP de
+développement. Il refuse de s'exécuter hors instance locale, mais autant ne pas l'envoyer.
+
+**Trois contraintes de construction, toutes découvertes à l'usage :**
+1. `dockerContext: .` — la racine du dépôt, pas `apps/dashboard`, sinon les imports
+   `@fitia/*` sont introuvables.
+2. **L'installation pnpm doit avoir lieu dans l'étape qui construit.** Installer dans une
+   étape `deps` séparée puis copier le seul `/app/node_modules` échoue : pnpm place les
+   liens d'espace de travail dans `apps/dashboard/node_modules`. Sans eux,
+   `tailwind.config.ts` ne résout pas `@fitia/design-tokens/tailwind-preset` et le build
+   casse sur `globals.css`.
+3. `outputFileTracingRoot` remonté à la racine du dépôt dans `next.config.mjs`, sinon la
+   sortie `standalone` oublie `packages/*` et le serveur plante au démarrage.
+
+✅ **Vérifié le 2026-08-08** : image construite (322 Mo), conteneur démarré, `/login`
+répond **HTTP 200**, prêt en 327 ms.
+
+---
+
 ## 9. Points d'attention contexte local
 - **Data faible** : images compressées, bundle optimisé, cache local systématique.
 - **Connectivité intermittente** : les horaires doivent rester lisibles **hors ligne** (cache AsyncStorage).

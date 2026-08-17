@@ -1,0 +1,60 @@
+# Déploiement Mosquée Fitia sur Render — plan GRATUIT.
+#
+# Render lit ce fichier (Blueprint) et crée le service d'un coup. Les valeurs
+# marquées `sync: false` sont volontairement absentes : ce sont des secrets, ils
+# se saisissent dans l'interface Render et n'ont rien à faire dans un dépôt.
+#
+# ═════════════════════════════════════════════════════════════════════════════
+# ⚠️ CE DÉPLOIEMENT NE RESSEMBLE PAS À CELUI DE HADJCHANGES — ET C'EST NORMAL
+#
+# HadjChanges déploie DEUX services : une API NestJS qu'il faut héberger, et son
+# tableau de bord. Ici, il n'y a PAS d'API à héberger : **Supabase EST le
+# backend** (PostgreSQL + Auth + Realtime + Storage + Edge Functions).
+#
+# Render n'héberge donc QU'UNE chose : le tableau de bord Next.js.
+#   • La base, l'authentification et le temps réel  → Supabase Cloud (gratuit)
+#   • Les Edge Functions (`create-member`, `send-push`) → Supabase, PAS Render
+#   • L'application mobile → build EAS, elle ne passe par aucun serveur web
+# ═════════════════════════════════════════════════════════════════════════════
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# CE QUE LE PLAN GRATUIT IMPLIQUE — à connaître avant de s'en étonner
+#
+# 1. NE PAS CRÉER DE POSTGRESQL CHEZ RENDER. Le PostgreSQL gratuit de Render
+#    EXPIRE et emporte les données : c'est ce qui a mis PREVENTIX 360 hors
+#    service. La base vit chez Supabase, qui ne s'autodétruit pas.
+#
+# 2. LE SERVICE S'ENDORT après ~15 min sans trafic et met ~50 s à se réveiller.
+#    Le bureau de la mosquée verra donc une première page très lente après une
+#    pause. Sans conséquence sur les données : tout est chez Supabase.
+#
+# 3. LE DISQUE EST ÉPHÉMÈRE. Sans objet ici — le tableau de bord n'écrit aucun
+#    fichier localement, les justificatifs et documents vont dans Supabase Storage.
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  - type: web
+    name: mosquee-fitia-dashboard
+    runtime: docker
+    dockerfilePath: ./apps/dashboard/Dockerfile
+    # ⚠️ Contexte = racine du dépôt. Le tableau de bord importe `packages/*` ;
+    # un contexte limité à `apps/dashboard` ferait échouer la construction.
+    dockerContext: .
+    plan: free
+    region: frankfurt
+    healthCheckPath: /login
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      # ⚠️ Ces deux valeurs sont INSCRITES DANS LE BUNDLE à la construction
+      # (préfixe `NEXT_PUBLIC_`). Les modifier impose de RECONSTRUIRE le
+      # service — un simple redémarrage ne suffira pas.
+      #
+      # À récupérer dans le projet Supabase Cloud :
+      #   Project Settings → API → Project URL et anon/public key
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false

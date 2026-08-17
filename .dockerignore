@@ -1,0 +1,34 @@
+# Le contexte de build est la racine du dépôt : sans ce filtre, Docker enverrait
+# les ~54 000 fichiers de `node_modules` au démon avant même de commencer.
+node_modules
+**/node_modules
+
+# Sorties de build : reconstruites dans l'image.
+.next
+**/.next
+.expo
+**/.expo
+dist
+**/dist
+
+# Rien de tout ceci n'a sa place dans une image de production.
+.git
+.github
+*.log
+*.tsbuildinfo
+
+# ⚠️ Secrets : les variables viennent de Render, jamais du dépôt.
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Outillage local sans objet en production.
+supabase/.temp
+scripts-verif
+
+# ⚠️ NE PAS exclure `apps/mobile` : le lockfile pnpm le déclare comme membre de
+# l'espace de travail. S'il manque, `--frozen-lockfile` refuse d'installer
+# (« lockfile is not up to date »). Ses sources ne pèsent rien une fois
+# `node_modules` écarté ; c'est le filtre `--filter dashboard...` du Dockerfile
+# qui évite d'installer Expo et React Native.
