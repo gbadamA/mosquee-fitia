@@ -69,20 +69,20 @@
 | **Diffusion dashboard → mobile** | **Supabase Realtime** — le mobile s'abonne à `prayer_times`, `announcements`, `events` et reçoit les nouveautés instantanément ; complété par push Expo |
 | Auth | **Supabase Auth** — téléphone + OTP SMS (fidèles), email + mot de passe (staff) |
 
-> ⚠️ **OTP DÉSACTIVÉ — état temporaire, à rétablir.**
-> `apps/mobile/lib/auth-mode.ts` → `OTP_ENABLED = false` : le fidèle saisit son numéro
-> et entre **sans code**, via l'Edge Function `dev-login`. Demandé explicitement pour
-> accélérer les tests sur émulateur ; l'utilisateur dira quand le remettre.
+> ✅ **OTP RÉTABLI le 2026-08-08.** `apps/mobile/lib/auth-mode.ts` → `OTP_ENABLED = true` :
+> le fidèle saisit son numéro, reçoit un code par SMS, puis le saisit sur l'écran de
+> vérification. C'est le seul mode acceptable pour une version distribuée.
 >
-> **Pour rétablir :** passer `OTP_ENABLED` à `true`. C'est la seule modification —
-> l'écran de connexion, l'écran de vérification et le bandeau d'avertissement suivent.
-> `supabase/functions/dev-login` peut alors être supprimée.
+> ⚠️ **En production, les SMS ne partent pas tout seuls.** Il faut un fournisseur configuré
+> dans Supabase Cloud → **Authentication → Providers → Phone** (Twilio, Vonage…). Sans lui,
+> « Recevoir le code » échouera pour tout numéro absent de `[auth.sms.test_otp]`
+> (en local : `+22507000000`, code `123456`).
 >
-> **Pourquoi ce n'est pas une bombe à retardement :** `dev-login` refuse de s'exécuter
-> si `SUPABASE_URL` n'est pas locale (127.0.0.1 / localhost / kong). En production
-> l'URL est `https://<ref>.supabase.co` → la fonction répond 403 et reste inerte,
-> même déployée par mégarde. Et le mobile affiche un bandeau orange tant que le
-> contournement est actif : impossible de l'oublier.
+> **Contournement de développement**, si le besoin revient : passer `OTP_ENABLED` à `false`.
+> Le fidèle entre alors **sans code** via l'Edge Function `dev-login`. Basculer la constante
+> suffit — écran de connexion, écran de vérification et bandeau d'avertissement suivent.
+> ⛔ `dev-login` ne doit JAMAIS être déployée. Elle refuse déjà de s'exécuter hors instance
+> locale (`SUPABASE_URL` non locale → 403), mais autant ne pas l'envoyer.
 | Sécurité | **Row Level Security** par rôle, via les fonctions `auth_role()` / `is_staff()` / `is_admin()` |
 | Fichiers | **Supabase Storage** (photos, reçus PDF) |
 | Logique serveur | **Edge Functions** (Deno) — push, création de compte staff, reçus |

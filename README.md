@@ -150,10 +150,14 @@ modifier impose de **reconstruire** le service — un redémarrage ne suffit pas
 
 ### 4. À faire avant la mise en service réelle
 
-- [ ] Rétablir l'OTP : `OTP_ENABLED = true` dans `apps/mobile/lib/auth-mode.ts`
-- [ ] Renseigner les vraies clés Twilio pour les SMS (`supabase/config.toml` en local,
-      **Authentication → Providers → Phone** sur Supabase Cloud)
+- [x] ~~Rétablir l'OTP~~ — fait le 2026-08-08, `OTP_ENABLED = true`
+- [ ] **Configurer un fournisseur SMS** — sans lui, l'OTP rétabli ne peut envoyer aucun
+      code et la connexion des fidèles est bloquée en production.
+      Supabase Cloud → **Authentication → Providers → Phone** (Twilio, Vonage…).
+      En local, seul `+22507000000` fonctionne, avec le code `123456`.
 - [ ] Pointer `apps/mobile/.env` sur l'URL Supabase Cloud, puis build EAS
+- [ ] Vérifier que `supabase/functions/dev-login` **n'est pas** déployée
+      (`npx supabase functions list`) — elle n'a plus aucun usage.
 
 ---
 
