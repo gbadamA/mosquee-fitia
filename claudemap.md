@@ -16,7 +16,7 @@
 | **Cible** | Fidèles, imam, trésorier, secrétaire, comité de gestion |
 | **Marché** | Côte d'Ivoire / Afrique de l'Ouest francophone |
 | **Langue produit** | Français (option arabe prévue — voir §9) |
-| **Contraintes locales** | Mobile Money, faible data, connectivité intermittente, WhatsApp roi, SMS OTP |
+| **Contraintes locales** | Mobile Money, faible data, connectivité intermittente, WhatsApp roi, **pas de fournisseur SMS** |
 | **Statut** | 🟡 Phase 0 — socle en cours de scaffolding |
 
 **Promesse produit :** une app de mosquée qui inspire le respect — sobre, digne, chaleureuse — et qui rend un service quotidien réel : *savoir quand est la prochaine prière, ce que dit l'imam, et où va l'argent de la communauté.*
@@ -67,19 +67,27 @@
 |---|---|
 | Base de données | **PostgreSQL** managé |
 | **Diffusion dashboard → mobile** | **Supabase Realtime** — le mobile s'abonne à `prayer_times`, `announcements`, `events` et reçoit les nouveautés instantanément ; complété par push Expo |
-| Auth | **Supabase Auth** — téléphone + OTP SMS (fidèles), email + mot de passe (staff) |
+| Auth | **Supabase Auth** — téléphone + **mot de passe** (fidèles), email + mot de passe (staff) |
 
-> ✅ **OTP : un seul chemin de connexion.** Le fidèle saisit son numéro, reçoit un code
-> par SMS, puis le saisit sur l'écran de vérification. Il n'existe plus aucun mode
-> alternatif : le contournement « sans code » (constante `OTP_ENABLED` + Edge Function
-> `dev-login`) a été **entièrement retiré le 2026-08-08**, code client compris.
-> Le réintroduire signifierait rouvrir une porte dérobée — le code reste dans
-> l'historique git si le besoin se représentait.
+> ✅ **Un seul chemin de connexion.** Le contournement « sans code » (constante
+> `OTP_ENABLED` + Edge Function `dev-login`) a été **entièrement retiré le 2026-08-08**,
+> code client compris. Le réintroduire signifierait rouvrir une porte dérobée.
 >
-> ⚠️ **En production, les SMS ne partent pas tout seuls.** Il faut un fournisseur configuré
-> dans Supabase Cloud → **Authentication → Providers → Phone** (Twilio, Vonage…). Sans lui,
-> « Recevoir le code » échouera pour tout numéro absent de `[auth.sms.test_otp]`
-> (en local : `+22507000000`, code `123456`) et **aucun fidèle ne pourra se connecter**.
+> 🔑 **Plus d'OTP depuis le 2026-08-17 : numéro + mot de passe.** La mosquée n'a pas de
+> fournisseur SMS ; un OTP n'enverrait aucun code et **personne** ne pourrait se connecter.
+> Le numéro reste l'identifiant — c'est ce qui parle aux fidèles — et un mot de passe
+> remplace le code :
+>
+> - `create-member` engendre le mot de passe (8 caractères, alphabet **sans** `0/O` ni
+>   `1/I/l` : il est dicté à voix haute et recopié à la main) et le renvoie **une seule
+>   fois** ; Supabase n'en garde qu'un haché.
+> - Le secrétaire le remet au fidèle qu'il a en face de lui : la vérification du numéro
+>   a lieu **physiquement**, au lieu d'un SMS. D'où `phone_confirm: true`.
+> - Oubli, ou fidèle créé avant ce changement → fiche du fidèle → **Émettre un mot de
+>   passe**. Un mot de passe perdu ne se retrouve pas, il ne peut qu'être remplacé.
+>
+> Le parcours OTP complet (envoi + écran `verify.tsx`) est dans l'historique git, commit
+> `db27816` et ses parents, si un fournisseur SMS est un jour souscrit.
 | Sécurité | **Row Level Security** par rôle, via les fonctions `auth_role()` / `is_staff()` / `is_admin()` |
 | Fichiers | **Supabase Storage** (photos, reçus PDF) |
 | Logique serveur | **Edge Functions** (Deno) — push, création de compte staff, reçus |
@@ -340,7 +348,7 @@ et met en cache la dernière ligne reçue pour fonctionner hors connexion.
 | Phase | Contenu | Sortie attendue |
 |---|---|---|
 | **0 — Socle** ✅ | Monorepo pnpm, `design-tokens`, `shared`, `supabase` + migrations, scaffolds Next + Expo, **diffusion horaires/annonces temps réel** | dashboard et mobile typecheckent à 0 erreur ; reste à lancer Supabase pour vérifier la diffusion de bout en bout |
-| **1 — MVP** | Auth OTP fidèle + email staff, accueil horaires + compte à rebours, fil d'annonces, déclaration de don/cotisation + validation trésorier | boucle fidèle complète |
+| **1 — MVP** | Auth fidèle (numéro + mot de passe) + email staff, accueil horaires + compte à rebours, fil d'annonces, déclaration de don/cotisation + validation trésorier | boucle fidèle complète |
 | **2 — Dashboard** | Fidèles (liste/export), finances (KPIs + validation + dépenses), événements | pilotage du bureau |
 | **3 — Notifications** | Push Expo avant chaque prière, nouvelle annonce, rappel de cotisation ; canal WhatsApp | engagement |
 | **4 — Transparence** | Reçus PDF, rapports financiers exportables pour l'assemblée des fidèles, campagnes avec jauge | confiance de la communauté |
@@ -386,7 +394,9 @@ répond **HTTP 200**, prêt en 327 ms.
 - **Connectivité intermittente** : les horaires doivent rester lisibles **hors ligne** (cache AsyncStorage).
 - **Mobile Money** : Orange Money / Wave / MTN. V1 = preuve de paiement ; API réelle = Phase ultérieure.
 - **WhatsApp** : canal complémentaire au push (adoption plus forte que l'email).
-- **SMS OTP** : auth des fidèles (numéro de test local `+22507000000`, code `123456`).
+- **Pas de SMS** : la mosquée n'a pas de fournisseur, d'où le mot de passe plutôt que l'OTP.
+  Le mot de passe est remis **de la main à la main** par le secrétaire — un circuit qui colle
+  à la réalité locale, où le bureau connaît personnellement les fidèles.
 - **Arabe** : prévu en option ; les chaînes doivent rester centralisées pour permettre l'i18n sans refonte.
 
 ---

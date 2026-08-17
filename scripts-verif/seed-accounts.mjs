@@ -70,4 +70,38 @@ for (const account of ACCOUNTS) {
   else console.log(`✓ ${account.email} / ${PASSWORD} → ${account.role}`);
 }
 
-console.log("\nFidèle mobile : +22507000000, code OTP 123456 (numéro de test local).");
+// Fidèle de test pour l'application mobile.
+//
+// Créé ici pour de bon : il n'y a plus d'OTP, donc plus de numéro « magique »
+// qui ouvrirait une session sans compte existant. Sans ce bloc, il n'y aurait
+// aucun moyen d'ouvrir l'app mobile en local.
+const FIDELE_PHONE = "+22507000000";
+
+const { data: fidele, error: fideleError } = await admin.auth.admin.createUser({
+  phone: FIDELE_PHONE,
+  password: PASSWORD,
+  phone_confirm: true,
+  user_metadata: { full_name: "Fidèle Test" },
+});
+
+if (fideleError && !/already/i.test(fideleError.message)) {
+  console.error(`✗ ${FIDELE_PHONE} :`, fideleError.message);
+} else {
+  // Déjà présent : lui réattribuer le mot de passe, sinon un ancien compte de
+  // l'époque OTP resterait sans aucun moyen de connexion.
+  let id = fidele?.user?.id;
+  if (!id) {
+    const { data: list } = await admin.auth.admin.listUsers();
+    id = list?.users.find((u) => u.phone === FIDELE_PHONE.replace("+", ""))?.id;
+    if (id) await admin.auth.admin.updateUserById(id, { password: PASSWORD });
+  }
+  if (id) {
+    await admin
+      .from("profiles")
+      .update({ full_name: "Fidèle Test", status: "actif", quartier: "Abobo" })
+      .eq("id", id);
+    console.log(`✓ ${FIDELE_PHONE} / ${PASSWORD} → fidèle (application mobile)`);
+  } else {
+    console.error(`✗ ${FIDELE_PHONE} : introuvable`);
+  }
+}

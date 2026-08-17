@@ -19,6 +19,7 @@ import {
   type Role,
 } from "@fitia/shared";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
+import { invokeEdge } from "@/lib/edge";
 import { useAuth } from "@/lib/auth";
 import MemberDrawer from "./MemberDrawer";
 
@@ -56,6 +57,13 @@ export default function FidelesPage() {
 
   // Fiche détaillée
   const [selected, setSelected] = useState<Profile | null>(null);
+
+  /** Identifiants à remettre au fidèle — affichés UNE SEULE FOIS après création. */
+  const [credentials, setCredentials] = useState<{
+    nom: string;
+    phone: string;
+    password: string;
+  } | null>(null);
 
   // Import en masse
   const [importing, setImporting] = useState(false);
@@ -111,23 +119,27 @@ export default function FidelesPage() {
     }
 
     setBusy(true);
-    const { data, error: fnError } = await getSupabase().functions.invoke("create-member", {
-      body: {
-        kind: "fidele",
-        full_name: fullName.trim(),
-        phone: normalized,
-        quartier: quartier.trim() || null,
-        category,
-      },
+    const { data, error: failure } = await invokeEdge<{ password?: string }>("create-member", {
+      kind: "fidele",
+      full_name: fullName.trim(),
+      phone: normalized,
+      quartier: quartier.trim() || null,
+      category,
     });
     setBusy(false);
 
-    const failure = fnError?.message ?? (data as { error?: string } | null)?.error;
     if (failure) {
       setError(failure);
       return;
     }
 
+    const issued = data?.password;
+    if (issued) {
+      // Supabase ne conserve ce mot de passe que haché : c'est le seul instant où
+      // il est lisible. S'il n'est pas noté maintenant, il faudra en émettre un
+      // nouveau depuis la fiche du fidèle.
+      setCredentials({ nom: fullName.trim(), phone: normalized, password: issued });
+    }
     setMessage(`${fullName.trim()} enregistré.`);
     setFullName("");
     setPhone("");
@@ -202,17 +214,14 @@ export default function FidelesPage() {
             MEMBER_CATEGORY_LABELS[c].toLowerCase() === categorieCsv?.toLowerCase(),
         ) ?? "membre_actif";
 
-      const { data, error: fnError } = await supabase.functions.invoke("create-member", {
-        body: {
-          kind: "fidele",
-          full_name: nom,
-          phone: normalized,
-          quartier: quartierCsv || null,
-          category: cat,
-        },
+      const { error: failure } = await invokeEdge("create-member", {
+        kind: "fidele",
+        full_name: nom,
+        phone: normalized,
+        quartier: quartierCsv || null,
+        category: cat,
       });
 
-      const failure = fnError?.message ?? (data as { error?: string } | null)?.error;
       if (failure) report.push(`Ligne ${numero} (${nom}) : ${failure}`);
       else created += 1;
     }
@@ -322,6 +331,43 @@ export default function FidelesPage() {
         <div className="mb-5 rounded-md border border-success/40 bg-success/10 p-4 text-caption text-success">
           {message}
         </div>
+      )}
+
+      {/* Identifiants à recopier AVANT de fermer : ils ne réapparaîtront pas. */}
+      {credentials && (
+        <section className="mb-5 rounded-lg border-2 border-secondary bg-secondary/10 p-5">
+          <div className="mb-3 flex items-start justify-between gap-3">
+            <div>
+              <p className="font-display text-h3">
+                Identifiants de {credentials.nom}
+              </p>
+              <p className="text-caption text-light-muted dark:text-dark-muted">
+                Notez-les et remettez-les au fidèle <strong>maintenant</strong> :
+                ce mot de passe ne sera plus jamais affiché.
+              </p>
+            </div>
+            <button
+              onClick={() => setCredentials(null)}
+              className="shrink-0 rounded-full border border-light-border px-4 py-1.5 text-caption transition hover:border-primary dark:border-dark-border"
+            >
+              J&apos;ai noté
+            </button>
+          </div>
+          <dl className="grid gap-2 sm:grid-cols-2">
+            <div className="rounded-md bg-light-surface p-3 dark:bg-dark-surface">
+              <dt className="text-caption text-light-muted dark:text-dark-muted">
+                Numéro de connexion
+              </dt>
+              <dd className="font-mono text-h3">{formatPhoneCI(credentials.phone)}</dd>
+            </div>
+            <div className="rounded-md bg-light-surface p-3 dark:bg-dark-surface">
+              <dt className="text-caption text-light-muted dark:text-dark-muted">
+                Mot de passe
+              </dt>
+              <dd className="font-mono text-h3 tracking-widest">{credentials.password}</dd>
+            </div>
+          </dl>
+        </section>
       )}
 
       {open && canCreate && (

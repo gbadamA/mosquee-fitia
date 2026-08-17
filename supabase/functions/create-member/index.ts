@@ -22,8 +22,9 @@ const CORS = {
 };
 
 type Payload = {
-  kind: "fidele" | "staff";
-  full_name: string;
+  /** `reset_password` redonne un mot de passe à un fidèle déjà enregistré. */
+  kind: "fidele" | "staff" | "reset_password";
+  full_name?: string;
   /** Fidèle : requis, format +225XXXXXXXXXX. */
   phone?: string;
   quartier?: string | null;
@@ -32,6 +33,8 @@ type Payload = {
   email?: string;
   password?: string;
   role?: "secretaire" | "tresorier" | "imam" | "admin";
+  /** `reset_password` : le fidèle concerné. */
+  member_id?: string;
 };
 
 function json(body: unknown, status = 200) {
@@ -39,6 +42,19 @@ function json(body: unknown, status = 200) {
     status,
     headers: { ...CORS, "content-type": "application/json" },
   });
+}
+
+/**
+ * Mot de passe court, lisible à voix haute et sans ambiguïté.
+ *
+ * L'alphabet exclut volontairement `0/O` et `1/I/l` : ce mot de passe sera dicté
+ * ou recopié à la main par des fidèles, souvent peu à l'aise avec l'écrit. Un
+ * caractère confondu, c'est un fidèle qui n'entre pas et rappelle la mosquée.
+ */
+function makePassword(): string {
+  const alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  const bytes = crypto.getRandomValues(new Uint8Array(8));
+  return Array.from(bytes, (b) => alphabet[b % alphabet.length]).join("");
 }
 
 Deno.serve(async (req: Request) => {
@@ -82,11 +98,36 @@ Deno.serve(async (req: Request) => {
     return json({ error: "Droits insuffisants" }, 403);
   }
 
+  // Réattribution d'un mot de passe à un fidèle existant. Nécessaire pour tous
+  // ceux enregistrés avant le passage au mot de passe : sans ça, ils resteraient
+  // définitivement enfermés dehors.
+  if (payload.kind === "reset_password") {
+    if (!payload.member_id) return json({ error: "Fidèle non précisé" }, 400);
+
+    const password = makePassword();
+    const { error: resetError } = await admin.auth.admin.updateUserById(payload.member_id, {
+      password,
+    });
+    if (resetError) return json({ error: resetError.message }, 400);
+    return json({ password });
+  }
+
   if (!payload.full_name || payload.full_name.trim().length < 3) {
     return json({ error: "Nom trop court" }, 400);
   }
 
   // 3. Création de l'utilisateur. Le trigger `handle_new_user` crée le profil.
+  //
+  // ⚠️ Le fidèle reçoit un MOT DE PASSE, pas un code SMS. La mosquée n'a pas de
+  // fournisseur SMS : sans mot de passe, personne ne pourrait se connecter.
+  // `phone_confirm: true` marque le numéro comme vérifié — c'est le secrétaire
+  // qui l'a saisi en face du fidèle, la vérification a eu lieu physiquement.
+  //
+  // Généré ici plutôt que saisi : un mot de passe choisi par le secrétaire pour
+  // des dizaines de fidèles finirait invariablement identique pour tous.
+  const generatedPassword =
+    payload.kind === "fidele" ? payload.password || makePassword() : undefined;
+
   const createArgs =
     payload.kind === "staff"
       ? {
@@ -97,6 +138,7 @@ Deno.serve(async (req: Request) => {
         }
       : {
           phone: payload.phone,
+          password: generatedPassword,
           phone_confirm: true,
           user_metadata: { full_name: payload.full_name },
         };
@@ -132,5 +174,8 @@ Deno.serve(async (req: Request) => {
     .eq("id", created.user.id)
     .single();
 
-  return json({ profile });
+  // Le mot de passe n'est renvoyé QU'ICI, une seule fois : Supabase ne le stocke
+  // que haché, il sera irrécupérable ensuite. Le secrétaire doit le noter et le
+  // remettre au fidèle — l'écran Fidèles l'affiche en conséquence.
+  return json({ profile, password: generatedPassword });
 });

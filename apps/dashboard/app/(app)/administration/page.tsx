@@ -5,6 +5,7 @@ import { ShieldCheck, Save, Building2, UserPlus } from "lucide-react";
 import { ROLE_LABELS, roleSchema, type Profile, type Role } from "@fitia/shared";
 import type { MosqueRow } from "@fitia/supabase";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
+import { invokeEdge } from "@/lib/edge";
 import { useAuth } from "@/lib/auth";
 
 const ROLES = roleSchema.options as readonly Role[];
@@ -75,18 +76,15 @@ export default function AdministrationPage() {
     }
 
     setBusy(true);
-    const { data, error: fnError } = await getSupabase().functions.invoke("create-member", {
-      body: {
-        kind: "staff",
-        full_name: newName.trim(),
-        email: newEmail.trim(),
-        password: newPassword,
-        role: newRole,
-      },
+    const { error: failure } = await invokeEdge("create-member", {
+      kind: "staff",
+      full_name: newName.trim(),
+      email: newEmail.trim(),
+      password: newPassword,
+      role: newRole,
     });
     setBusy(false);
 
-    const failure = fnError?.message ?? (data as { error?: string } | null)?.error;
     if (failure) {
       setError(failure);
       return;

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { X, Save, Receipt } from "lucide-react";
+import { X, Save, Receipt, KeyRound } from "lucide-react";
 import {
   formatFCFA,
   formatPhoneCI,
@@ -21,6 +21,7 @@ import {
 } from "@fitia/shared";
 import type { ContributionRow, DonationRow } from "@fitia/supabase";
 import { getSupabase } from "@/lib/supabase";
+import { invokeEdge } from "@/lib/edge";
 
 /**
  * Fiche détaillée d'un fidèle : informations modifiables + historique complet
@@ -70,6 +71,10 @@ export default function MemberDrawer({
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
+  /** Mot de passe fraîchement émis — visible une seule fois. */
+  const [issued, setIssued] = useState<string | null>(null);
+  const [issuing, setIssuing] = useState(false);
+
   useEffect(() => {
     const supabase = getSupabase();
     (async () => {
@@ -104,6 +109,30 @@ export default function MemberDrawer({
   const totalValide = entries
     .filter((e) => e.status === "valide")
     .reduce((acc, e) => acc + e.amount, 0);
+
+  /**
+   * Réémet un mot de passe. Indispensable pour les fidèles enregistrés avant
+   * l'abandon de l'OTP — ils n'en ont aucun — et pour tous les oublis ensuite.
+   * Supabase ne stockant qu'un haché, un mot de passe perdu ne se retrouve pas :
+   * il ne peut être que remplacé.
+   */
+  async function reissuePassword() {
+    setIssuing(true);
+    setError(null);
+    setIssued(null);
+
+    const { data, error: failure } = await invokeEdge<{ password?: string }>("create-member", {
+      kind: "reset_password",
+      member_id: member.id,
+    });
+    setIssuing(false);
+
+    if (failure) {
+      setError(failure);
+      return;
+    }
+    setIssued(data?.password ?? null);
+  }
 
   async function save() {
     setError(null);
@@ -285,6 +314,34 @@ export default function MemberDrawer({
           >
             <Save className="h-4 w-4" /> {busy ? "Enregistrement…" : "Enregistrer"}
           </button>
+
+          {/* Accès à l'application */}
+          <h3 className="mb-2 font-display text-h3">Accès à l&apos;application</h3>
+          <div className="mb-8 rounded-md border border-light-border p-4 dark:border-dark-border">
+            <p className="mb-3 text-caption text-light-muted dark:text-dark-muted">
+              Le fidèle se connecte avec son numéro et un mot de passe. En cas d&apos;oubli,
+              émettez-en un nouveau : l&apos;ancien devient aussitôt caduc.
+            </p>
+
+            {issued ? (
+              <div className="rounded-md border-2 border-secondary bg-secondary/10 p-3">
+                <p className="text-caption text-light-muted dark:text-dark-muted">
+                  Nouveau mot de passe — à remettre <strong>maintenant</strong>, il ne
+                  sera plus affiché :
+                </p>
+                <p className="font-mono text-h2 tracking-widest">{issued}</p>
+              </div>
+            ) : (
+              <button
+                onClick={reissuePassword}
+                disabled={issuing}
+                className="inline-flex items-center gap-2 rounded-full border border-light-border px-4 py-2 text-caption transition hover:border-primary hover:text-primary disabled:opacity-50 dark:border-dark-border"
+              >
+                <KeyRound className="h-3.5 w-3.5" />
+                {issuing ? "Émission…" : "Émettre un mot de passe"}
+              </button>
+            )}
+          </div>
 
           <h3 className="mb-2 font-display text-h3">Historique des versements</h3>
           <ul className="space-y-2">

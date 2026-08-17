@@ -40,16 +40,22 @@ enable_confirmations = false
 enable_signup = true
 enable_confirmations = false
 
-# Provider Twilio en placeholder : requis pour activer le login téléphone,
-# mais AUCUN SMS n'est envoyé car le test_otp ci-dessous intercepte les numéros de test.
-# En prod : vraies clés Twilio.
+# Provider Twilio en placeholder.
+#
+# ⚠️ L'application n'utilise PLUS l'OTP (depuis le 2026-08-17) : les fidèles se
+# connectent avec leur numéro + un mot de passe, faute de fournisseur SMS.
+# Ce bloc reste néanmoins nécessaire : Supabase refuse d'activer la connexion par
+# téléphone si aucun provider SMS n'est déclaré. Aucun SMS n'est jamais envoyé.
+# Ne PAS souscrire de compte Twilio pour la mise en service — c'est inutile ici.
 [auth.sms.twilio]
 enabled = true
 account_sid = "placeholder"
 message_service_sid = "placeholder"
 auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
 
-# OTP de test en local : ce numéro reçoit toujours le code 123456 (aucun SMS réel).
+# Vestige de l'époque OTP, conservé sans effet : plus aucun écran ne demande de code.
+# Le fidèle de test `+22507000000` est créé avec un mot de passe par
+# `scripts-verif/seed-accounts.mjs`.
 [auth.sms.test_otp]
 22507000000 = "123456"
 

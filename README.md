@@ -71,7 +71,29 @@ node scripts-verif/seed-accounts.mjs
 | Imam | `imam@fitia.ci` / `fitia1234` | accès complet |
 | Trésorier | `tresorier@fitia.ci` / `fitia1234` | finances |
 | Secrétaire | `secretaire@fitia.ci` / `fitia1234` | fidèles, diffusion |
-| Fidèle (mobile) | `+22507000000`, code OTP `123456` | app mobile |
+| Fidèle (mobile) | `+22507000000` + mot de passe `fitia1234` | app mobile |
+
+### 6. Connexion des fidèles — numéro + mot de passe
+
+⚠️ **Il n'y a plus de code par SMS.** La mosquée n'a pas de fournisseur SMS :
+un OTP n'enverrait aucun code et **personne** ne pourrait se connecter.
+
+Le circuit réel est donc celui-ci :
+
+1. Le secrétaire enregistre le fidèle dans **Fidèles → Nouveau fidèle**.
+2. Le dashboard affiche **une seule fois** un mot de passe engendré par le serveur.
+3. Le secrétaire le note et le remet au fidèle, qui l'a en face de lui — la
+   vérification du numéro a lieu **physiquement**, au lieu d'un SMS.
+4. Oubli ou fidèle enregistré avant ce changement : ouvrir sa fiche →
+   **Émettre un mot de passe**. Supabase ne stocke qu'un haché, un mot de passe
+   perdu ne se retrouve pas, il ne peut qu'être remplacé.
+
+L'alphabet des mots de passe exclut `0/O` et `1/I/l` : ils sont dictés à voix
+haute et recopiés à la main.
+
+**Revenir à l'OTP** le jour où un fournisseur SMS sera souscrit : le parcours
+complet (envoi du code + écran `verify.tsx`) est dans l'historique git, commit
+`db27816` et ses parents.
 
 ---
 
@@ -149,13 +171,16 @@ modifier impose de **reconstruire** le service — un redémarrage ne suffit pas
 
 ### 4. À faire avant la mise en service réelle
 
-- [x] ~~Rétablir l'OTP~~ — fait le 2026-08-08
 - [x] ~~Retirer le contournement de connexion~~ — `dev-login` et le code client
       supprimés le 2026-08-08 ; il n'existe plus qu'un seul chemin de connexion
-- [ ] **Configurer un fournisseur SMS** — sans lui, l'OTP ne peut envoyer aucun code
-      et **aucun fidèle ne pourra se connecter** en production.
-      Supabase Cloud → **Authentication → Providers → Phone** (Twilio, Vonage…).
-      En local, seul `+22507000000` fonctionne, avec le code `123456`.
+- [x] ~~Rendre la connexion possible sans fournisseur SMS~~ — passage au
+      **numéro + mot de passe** le 2026-08-17 (voir « Connexion des fidèles »).
+      Aucun fournisseur SMS n'est donc requis pour la mise en service.
+- [ ] *(facultatif)* Revenir à l'OTP si un fournisseur SMS est un jour souscrit :
+      Supabase Cloud → **Authentication → Providers → Phone** (Twilio, Vonage…),
+      puis restaurer le parcours depuis le commit `db27816`.
+- [ ] **Émettre un mot de passe pour les fidèles déjà enregistrés** — ceux créés
+      avant le 2026-08-17 n'en ont aucun. Fiche du fidèle → *Émettre un mot de passe*.
 - [ ] Pointer `apps/mobile/.env` sur l'URL Supabase Cloud, puis build EAS
 
 ---
@@ -179,6 +204,17 @@ modifier impose de **reconstruire** le service — un redémarrage ne suffit pas
   **Ne pas remettre ce projet sous OneDrive.** Si un jour c'est inévitable, installer
   watchman (`choco install watchman -y`, terminal admin) : une seule surveillance récursive
   au lieu de 6 702 handles.
+- **Après tout déplacement du projet, refaire `pnpm install`.** Les liens de workspace
+  (`node_modules/@fitia/*`) sont des symlinks en **chemin absolu** : ils continuent de
+  pointer vers l'ancien emplacement et deviennent morts. Symptôme au build :
+  `Cannot find module '@fitia/design-tokens/tailwind-preset'` — alors que `tsc` passe
+  sans broncher, parce qu'il résout par les `paths` du tsconfig, pas par `node_modules`.
+  Le build Docker, lui, réinstalle dans le conteneur : **il masque complètement ce
+  problème**. Ne pas conclure d'un build Docker vert que le poste local est sain.
+- **`pnpm install` peut sortir en code 0 sans rien installer.** S'il décide de purger
+  `node_modules`, il demande confirmation ; sans TTY il abandonne avec
+  `ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY` — **et rend quand même 0**. Toujours
+  lire la sortie. Remède : `CI=true pnpm install`.
 - Ne pas supprimer `apps/dashboard/.next` pendant que `next dev` tourne.
   En revanche, **si Next refuse de démarrer** avec `EINVAL: invalid argument, readlink '.next/...'`,
   c'est que le dossier est corrompu (arrêt brutal, ou synchronisation OneDrive). Serveur arrêté,

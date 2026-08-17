@@ -28,6 +28,7 @@ import {
 } from "@fitia/shared";
 import type { ContributionRow, EventRegistrationRow } from "@fitia/supabase";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
+import { invokeEdge } from "@/lib/edge";
 import { useAuth } from "@/lib/auth";
 
 /**
@@ -176,18 +177,19 @@ export default function CommunicationPage() {
     setMessage(null);
     setBusy(true);
 
-    const { data, error: fnError } = await getSupabase().functions.invoke("send-push", {
-      body: { title, body, member_ids: reachable.map((m) => m.id) },
+    const { data, error: failure } = await invokeEdge<{ sent?: number }>("send-push", {
+      title,
+      body,
+      member_ids: reachable.map((m) => m.id),
     });
     setBusy(false);
 
-    const failure = fnError?.message ?? (data as { error?: string } | null)?.error;
     if (failure) {
       setError(failure);
       return;
     }
 
-    const sent = (data as { sent?: number } | null)?.sent ?? 0;
+    const sent = data?.sent ?? 0;
     if (await logSend(sent)) {
       setMessage(
         sent > 0

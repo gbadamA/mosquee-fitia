@@ -3,20 +3,25 @@ import { View, Text, TextInput, Pressable, ActivityIndicator, KeyboardAvoidingVi
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { Moon, ArrowRight } from "lucide-react-native";
+import { Moon, ArrowRight, Eye, EyeOff } from "lucide-react-native";
 import { normalizePhoneCI } from "@fitia/shared";
 import { supabase, isConfigured } from "../../lib/supabase";
 import { useMosque, useBrand } from "../../lib/mosque";
 import { useThemeColors } from "../../lib/theme";
 
 /**
- * Connexion des fidèles : numéro de téléphone, puis code reçu par SMS.
+ * Connexion des fidèles : numéro de téléphone + mot de passe.
  *
- * Il n'existe volontairement qu'UN SEUL chemin. Un contournement « sans code »
- * a existé pour accélérer les tests sur émulateur (constante `OTP_ENABLED` +
- * Edge Function `dev-login`) ; il a été retiré le 2026-08-08 avec la fonction
- * qui le servait. Le rétablir signifierait réintroduire une porte dérobée : le
- * code se retrouve dans l'historique git (commit `708864e` et ses parents).
+ * POURQUOI PAS DE CODE PAR SMS. La mosquée n'a pas de fournisseur SMS ; l'OTP
+ * ne pourrait envoyer aucun code et personne ne se connecterait. Le numéro reste
+ * l'identifiant — c'est ce qui parle aux fidèles — et un mot de passe remplace
+ * le code. Il est engendré par l'Edge Function `create-member` et remis en main
+ * propre par le secrétaire, qui a vu le fidèle : la vérification du numéro a donc
+ * bien eu lieu, physiquement plutôt que par SMS.
+ *
+ * REVENIR À L'OTP le jour où un fournisseur sera configuré : le parcours complet
+ * (envoi du code + écran de vérification) est dans l'historique git, commit
+ * `db27816` et ses parents.
  */
 export default function Login() {
   const colors = useThemeColors();
@@ -24,15 +29,21 @@ export default function Login() {
   const mosque = useMosque();
   const brandColors = useBrand(mosque);
   const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [reveal, setReveal] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function sendCode() {
+  async function signIn() {
     setError(null);
 
     const normalized = normalizePhoneCI(phone);
     if (normalized.length < 12) {
       setError("Numéro incomplet.");
+      return;
+    }
+    if (!password) {
+      setError("Saisissez votre mot de passe.");
       return;
     }
     if (!supabase) {
@@ -41,14 +52,21 @@ export default function Login() {
     }
 
     setBusy(true);
-    const { error: authError } = await supabase.auth.signInWithOtp({ phone: normalized });
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      phone: normalized,
+      password,
+    });
     setBusy(false);
 
     if (authError) {
-      setError(authError.message);
+      // Message unique volontairement : distinguer « numéro inconnu » de
+      // « mauvais mot de passe » indiquerait à un inconnu quels numéros sont
+      // enregistrés à la mosquée.
+      setError("Numéro ou mot de passe incorrect.");
       return;
     }
-    router.push({ pathname: "/(auth)/verify", params: { phone: normalized } });
+    // Le RootNavigator bascule vers (tabs) dès que la session existe.
+    router.replace("/(tabs)");
   }
 
   return (
@@ -82,7 +100,7 @@ export default function Login() {
           Bienvenue
         </Text>
         <Text className="mb-6 text-light-muted dark:text-dark-muted">
-          Entrez votre numéro pour recevoir un code de vérification par SMS.
+          Connectez-vous avec le numéro et le mot de passe remis par la mosquée.
         </Text>
 
         {!isConfigured && (
@@ -98,11 +116,38 @@ export default function Login() {
           keyboardType="phone-pad"
           placeholder="07 00 00 00 00"
           placeholderTextColor={colors.textMuted}
-          className="mb-5 rounded-md border border-light-border dark:border-dark-border px-4 py-3.5 text-base text-light-text dark:text-dark-text"
+          className="mb-4 rounded-md border border-light-border dark:border-dark-border px-4 py-3.5 text-base text-light-text dark:text-dark-text"
         />
 
+        <Text className="mb-1.5 text-light-muted dark:text-dark-muted">Mot de passe</Text>
+        <View className="mb-5 flex-row items-center rounded-md border border-light-border dark:border-dark-border">
+          <TextInput
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!reveal}
+            autoCapitalize="characters"
+            autoCorrect={false}
+            placeholder="••••••••"
+            placeholderTextColor={colors.textMuted}
+            className="flex-1 px-4 py-3.5 text-base tracking-widest text-light-text dark:text-dark-text"
+          />
+          {/* Un mot de passe engendré se recopie à la main : pouvoir le relire
+              évite bien des échecs de saisie. */}
+          <Pressable
+            onPress={() => setReveal((r) => !r)}
+            accessibilityLabel={reveal ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+            className="px-4 py-3.5 active:opacity-60"
+          >
+            {reveal ? (
+              <EyeOff color={colors.textMuted} size={20} />
+            ) : (
+              <Eye color={colors.textMuted} size={20} />
+            )}
+          </Pressable>
+        </View>
+
         <Pressable
-          onPress={sendCode}
+          onPress={signIn}
           disabled={busy}
           className="flex-row items-center justify-center gap-2 rounded-full bg-primary px-6 py-4 active:opacity-80"
         >
@@ -110,7 +155,7 @@ export default function Login() {
             <ActivityIndicator color="#fff" />
           ) : (
             <>
-              <Text className="text-base font-semibold text-white">Recevoir le code</Text>
+              <Text className="text-base font-semibold text-white">Se connecter</Text>
               <ArrowRight color="#fff" size={18} />
             </>
           )}
@@ -119,8 +164,8 @@ export default function Login() {
         {error && <Text className="mt-3 text-center text-danger">{error}</Text>}
 
         <Text className="mt-6 text-center text-caption text-light-muted dark:text-dark-muted">
-          En continuant, vous acceptez que la mosquée conserve votre numéro pour vous
-          transmettre les informations de la communauté.
+          Mot de passe oublié ou jamais reçu ? Adressez-vous au secrétariat de la
+          mosquée, qui vous en remettra un nouveau.
         </Text>
       </KeyboardAvoidingView>
     </View>
