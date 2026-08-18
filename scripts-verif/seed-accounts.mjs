@@ -117,11 +117,14 @@ if (!withTestFidele) {
   process.exit(0);
 }
 
+// Même identifiant interne que `create-member` et que l'écran de connexion.
+const FIDELE_EMAIL = `${FIDELE_PHONE.replace(/\D/g, "")}@fitia.invalid`;
+
 const { data: fidele, error: fideleError } = await admin.auth.admin.createUser({
-  phone: FIDELE_PHONE,
+  email: FIDELE_EMAIL,
   password: PASSWORD,
-  phone_confirm: true,
-  user_metadata: { full_name: "Fidèle Test" },
+  email_confirm: true,
+  user_metadata: { full_name: "Fidèle Test", phone: FIDELE_PHONE },
 });
 
 if (fideleError && !/already/i.test(fideleError.message)) {
@@ -132,13 +135,20 @@ if (fideleError && !/already/i.test(fideleError.message)) {
   let id = fidele?.user?.id;
   if (!id) {
     const { data: list } = await admin.auth.admin.listUsers();
-    id = list?.users.find((u) => u.phone === FIDELE_PHONE.replace("+", ""))?.id;
+    id = list?.users.find((u) => u.email === FIDELE_EMAIL)?.id;
     if (id) await admin.auth.admin.updateUserById(id, { password: PASSWORD });
   }
   if (id) {
     await admin
       .from("profiles")
-      .update({ full_name: "Fidèle Test", status: "actif", quartier: "Abobo" })
+      .update({
+        full_name: "Fidèle Test",
+        status: "actif",
+        quartier: "Abobo",
+        // Le trigger a copié l'identifiant interne : on rétablit la vérité métier.
+        phone: FIDELE_PHONE,
+        email: null,
+      })
       .eq("id", id);
     console.log(`✓ ${FIDELE_PHONE} / ${PASSWORD} → fidèle (application mobile)`);
   } else {

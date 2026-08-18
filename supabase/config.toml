@@ -40,24 +40,21 @@ enable_confirmations = false
 enable_signup = true
 enable_confirmations = false
 
-# Provider Twilio en placeholder.
+# ⛔ AUCUN FOURNISSEUR SMS — et c'est délibéré.
 #
-# ⚠️ L'application n'utilise PLUS l'OTP (depuis le 2026-08-17) : les fidèles se
-# connectent avec leur numéro + un mot de passe, faute de fournisseur SMS.
-# Ce bloc reste néanmoins nécessaire : Supabase refuse d'activer la connexion par
-# téléphone si aucun provider SMS n'est déclaré. Aucun SMS n'est jamais envoyé.
-# Ne PAS souscrire de compte Twilio pour la mise en service — c'est inutile ici.
-[auth.sms.twilio]
-enabled = true
-account_sid = "placeholder"
-message_service_sid = "placeholder"
-auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
-
-# Vestige de l'époque OTP, conservé sans effet : plus aucun écran ne demande de code.
-# Le fidèle de test `+22507000000` est créé avec un mot de passe par
-# `scripts-verif/seed-accounts.mjs`.
-[auth.sms.test_otp]
-22507000000 = "123456"
+# Mesuré le 2026-08-18 : Supabase n'ouvre la connexion par téléphone que si un
+# fournisseur SMS est DÉCLARÉ. Sans lui, `signInWithPassword({phone})` répond
+# « Phone logins are disabled » — même sans jamais envoyer le moindre SMS.
+#
+# Plutôt que de déclarer un Twilio factice, les fidèles s'authentifient par un
+# IDENTIFIANT INTERNE dérivé de leur numéro (`2250700000000@fitia.invalid`,
+# helper `phoneToAuthEmail` dans `packages/shared/src/profile.ts`). Ils saisissent
+# toujours leur numéro à l'écran ; le vrai numéro vit dans `profiles.phone`.
+#
+# ⚠️ Cette stack locale reflète donc EXACTEMENT la production : pas de canal SMS.
+# Ne pas réactiver le bloc Twilio « pour que ça marche en local » — ce serait
+# masquer la contrainte de production et faire croire à tort que tout va bien.
+# Le canal téléphone ne se rouvrira que le jour d'une vraie souscription SMS.
 
 [realtime]
 enabled = true

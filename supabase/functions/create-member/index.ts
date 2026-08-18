@@ -51,6 +51,27 @@ function json(body: unknown, status = 200) {
  * ou recopié à la main par des fidèles, souvent peu à l'aise avec l'écrit. Un
  * caractère confondu, c'est un fidèle qui n'entre pas et rappelle la mosquée.
  */
+/**
+ * ⚠️ COPIE EXACTE de `phoneToAuthEmail` / `normalizePhoneCI` de
+ * `packages/shared/src/profile.ts`. Deno ne peut pas importer le paquet de
+ * l'espace de travail, d'où la duplication — assumée, mais sous surveillance :
+ * si les deux divergent, un fidèle serait créé sous un identifiant que l'écran
+ * de connexion ne saurait pas reconstruire, et il ne pourrait jamais entrer.
+ * `scripts-verif/auth-password-check.mjs` crée par ici puis se connecte par le
+ * helper partagé : toute divergence y casse immédiatement.
+ *
+ * Pourquoi un e-mail plutôt que le téléphone : sans fournisseur SMS déclaré,
+ * Supabase refuse la connexion par téléphone (« Phone logins are disabled »,
+ * mesuré le 2026-08-18) — même sans jamais envoyer de SMS.
+ */
+const AUTH_EMAIL_DOMAIN = "fitia.invalid";
+
+function phoneToAuthEmail(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  const normalized = digits.startsWith("225") ? digits : `225${digits}`;
+  return `${normalized}@${AUTH_EMAIL_DOMAIN}`;
+}
+
 function makePassword(): string {
   const alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
   const bytes = crypto.getRandomValues(new Uint8Array(8));
@@ -137,10 +158,13 @@ Deno.serve(async (req: Request) => {
           user_metadata: { full_name: payload.full_name },
         }
       : {
-          phone: payload.phone,
+          // Identifiant interne dérivé du numéro — le fidèle ne le voit jamais.
+          // `email_confirm: true` : aucun courriel ne peut partir vers `.invalid`,
+          // il faut donc marquer l'identifiant vérifié d'emblée.
+          email: phoneToAuthEmail(payload.phone!),
           password: generatedPassword,
-          phone_confirm: true,
-          user_metadata: { full_name: payload.full_name },
+          email_confirm: true,
+          user_metadata: { full_name: payload.full_name, phone: payload.phone },
         };
 
   if (payload.kind === "staff" && (!payload.email || !payload.password)) {
@@ -160,6 +184,12 @@ Deno.serve(async (req: Request) => {
     payload.kind === "staff"
       ? { role: payload.role ?? "secretaire", status: "actif", category: "staff" }
       : {
+          // Le trigger a recopié `auth.users` : le numéro y est vide et l'e-mail
+          // est l'identifiant interne. On rétablit la vérité métier — c'est
+          // `profiles.phone` que lisent le dashboard et l'app, et afficher
+          // « 2250700000000@fitia.invalid » n'aurait aucun sens pour le bureau.
+          phone: payload.phone,
+          email: null,
           quartier: payload.quartier ?? null,
           category: payload.category ?? "membre_actif",
           status: "en_attente",

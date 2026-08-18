@@ -88,6 +88,26 @@
 >
 > Le parcours OTP complet (envoi + écran `verify.tsx`) est dans l'historique git, commit
 > `db27816` et ses parents, si un fournisseur SMS est un jour souscrit.
+>
+> 🪪 **Et sous le capot, ce n'est PAS l'auth téléphone (2026-08-18).** Mesuré, pas supposé :
+> avec `[auth.sms.twilio] enabled = false`, Supabase répond « Phone logins are disabled ».
+> **Le canal téléphone n'existe que si un fournisseur SMS est DÉCLARÉ**, même sans jamais
+> envoyer un seul SMS. La mosquée n'en a pas → `phoneToAuthEmail()` dérive
+> `2250700000000@fitia.invalid` (`.invalid` = RFC 2606, ne résout jamais) et l'authentification
+> **e-mail** prend le relais, elle n'exige aucun fournisseur.
+>
+> - Le fidèle ne voit **que son numéro** ; l'identifiant interne ne s'affiche nulle part.
+> - Le vrai numéro vit dans `profiles.phone`, colonne indépendante d'`auth.users`.
+>   `create-member` réécrit `phone` + `email: null` dans le profil après le trigger, qui
+>   aurait sinon recopié l'identifiant interne.
+> - ⚠️ **La règle est écrite TROIS fois** (paquet partagé, Edge Function Deno qui ne peut pas
+>   l'importer, script de vérification). `auth-password-check.mjs` contrôle que les trois
+>   portent le même domaine : si elles divergeaient, un fidèle serait créé sous un identifiant
+>   que l'écran de connexion ne saurait pas reconstruire — il n'entrerait plus jamais, sans
+>   le moindre message d'erreur.
+> - ⚠️ **La stack LOCALE n'a plus de fournisseur SMS non plus** : elle reflète exactement la
+>   production. Ne pas réactiver Twilio « pour que ça marche en local » — ce serait remasquer
+>   la contrainte et croire à tort que tout va bien.
 | Sécurité | **Row Level Security** par rôle, via les fonctions `auth_role()` / `is_staff()` / `is_admin()` |
 | Fichiers | **Supabase Storage** (photos, reçus PDF) |
 | Logique serveur | **Edge Functions** (Deno) — push, création de compte staff, reçus |

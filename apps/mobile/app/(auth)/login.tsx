@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { Moon, ArrowRight, Eye, EyeOff } from "lucide-react-native";
-import { normalizePhoneCI } from "@fitia/shared";
+import { normalizePhoneCI, phoneToAuthEmail } from "@fitia/shared";
 import { supabase, isConfigured } from "../../lib/supabase";
 import { useMosque, useBrand } from "../../lib/mosque";
 import { useThemeColors } from "../../lib/theme";
@@ -18,6 +18,11 @@ import { useThemeColors } from "../../lib/theme";
  * le code. Il est engendré par l'Edge Function `create-member` et remis en main
  * propre par le secrétaire, qui a vu le fidèle : la vérification du numéro a donc
  * bien eu lieu, physiquement plutôt que par SMS.
+ *
+ * POURQUOI L'AUTH E-MAIL SOUS LE CAPOT. Mesuré le 2026-08-18 : sans fournisseur
+ * SMS **déclaré**, Supabase répond « Phone logins are disabled » — même sans
+ * jamais envoyer de SMS. On passe donc par `phoneToAuthEmail()`, qui dérive un
+ * identifiant interne du numéro. L'utilisateur ne voit que son numéro.
  *
  * REVENIR À L'OTP le jour où un fournisseur sera configuré : le parcours complet
  * (envoi du code + écran de vérification) est dans l'historique git, commit
@@ -52,8 +57,11 @@ export default function Login() {
     }
 
     setBusy(true);
+    // Le fidèle saisit son numéro ; Supabase reçoit l'identifiant interne dérivé.
+    // Voir `phoneToAuthEmail` : la connexion par téléphone exigerait un
+    // fournisseur SMS déclaré, que la mosquée n'a pas.
     const { error: authError } = await supabase.auth.signInWithPassword({
-      phone: normalized,
+      email: phoneToAuthEmail(normalized),
       password,
     });
     setBusy(false);

@@ -180,27 +180,40 @@ Ce sont les deux seules fonctions du projet. `create-member` est
 **indispensable** : sans elle, impossible de créer un fidèle ni d'émettre un
 mot de passe, donc personne ne peut se connecter à l'application mobile.
 
-### ⛔ BLOCAGE CONNU : la connexion par téléphone exige un fournisseur SMS *déclaré*
+### ✅ Pourquoi l'authentification passe par un identifiant interne
 
 **Mesuré le 2026-08-18, pas supposé.** En passant `[auth.sms.twilio] enabled = false`
-dans `config.toml` puis en redémarrant la stack locale, `signInWithPassword({phone})`
-répond :
+puis en redémarrant la stack locale, `signInWithPassword({phone})` répond :
 
 ```
 Phone logins are disabled
 ```
 
-Autrement dit : le bloc Twilio en placeholder n'est **pas** décoratif — c'est lui qui
-ouvre le canal téléphone. Supabase n'active la connexion par téléphone que si un
-fournisseur SMS est déclaré, **même quand aucun SMS n'est jamais envoyé** (ce qui est
-notre cas : mot de passe, pas OTP).
+Supabase n'ouvre la connexion par téléphone que si un fournisseur SMS est
+**déclaré** — même quand aucun SMS n'est jamais envoyé, ce qui est notre cas
+(mot de passe, pas OTP). La mosquée n'ayant pas de fournisseur, déclarer un
+Twilio factice aurait été un compte tiers de plus à maintenir.
 
-Conséquence pour le projet Cloud : il faudra soit déclarer un fournisseur SMS (un
-compte Twilio d'essai suffit — aucun SMS ne partant jamais, il ne sera pas facturé),
-soit changer d'identifiant d'authentification. **À trancher avant `config push`.**
+**Solution retenue** : le fidèle saisit toujours **son numéro** à l'écran ; l'app
+le convertit en un identifiant interne `2250700000000@fitia.invalid`
+(`phoneToAuthEmail`, dans `packages/shared/src/profile.ts`) et utilise
+l'authentification e-mail, qui ne demande aucun fournisseur.
 
-⚠️ Et surtout : **ne pas lancer `supabase config push` tel quel**. Il enverrait vers la
-production le bloc Twilio en placeholder *et* le numéro de test `[auth.sms.test_otp]`.
+- `.invalid` est réservé par la **RFC 2606** et ne résout jamais : aucun courriel
+  ne peut partir vers ces adresses. Ce n'est pas une adresse, c'est un identifiant.
+- Le **vrai numéro** reste dans `profiles.phone`, colonne indépendante d'`auth.users`.
+  Le bureau ne voit jamais l'identifiant interne.
+- La règle est écrite **trois fois** (paquet partagé, Edge Function Deno qui ne peut
+  pas l'importer, script de vérification). `auth-password-check.mjs` contrôle qu'elles
+  portent le même domaine : si elles divergeaient, un fidèle serait créé sous un
+  identifiant que l'écran de connexion ne saurait pas reconstruire — il n'entrerait
+  plus jamais, sans le moindre message d'erreur.
+
+⚠️ **La stack locale n'a donc plus aucun fournisseur SMS non plus** : elle reflète
+exactement la production. Ne pas réactiver le bloc Twilio « pour que ça marche en
+local » — ce serait remasquer la contrainte.
+
+⚠️ **Ne pas lancer `supabase config push` sans relire `config.toml`.**
 
 ### 2. Créer le premier compte du bureau
 

@@ -4,6 +4,8 @@
  *
  *   1. Le secrétaire crée un fidèle       → un mot de passe est renvoyé
  *   2. Le fidèle se connecte avec         → session ouverte
+ *      (par le helper PARTAGÉ `phoneToAuthEmail`, alors que la création est
+ *       passée par la COPIE de l'Edge Function : toute divergence casse ici)
  *   3. Un mauvais mot de passe            → refusé
  *   4. Le secrétaire réémet un mot de passe → l'ANCIEN doit cesser de marcher
  *   5. Un fidèle ne peut pas en créer un autre (contrôle de rôle serveur)
@@ -11,6 +13,11 @@
  * Lancement : node scripts-verif/auth-password-check.mjs
  */
 import { createClient } from "@supabase/supabase-js";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 const URL = "http://127.0.0.1:54131";
 const ANON =
@@ -22,6 +29,45 @@ const check = (label, ok, detail = "") => {
   results.push({ label, ok, detail });
   console.log(`${ok ? "✓" : "✗"} ${label}${detail ? ` — ${detail}` : ""}`);
 };
+
+/**
+ * La règle de dérivation de l'identifiant, écrite ici une troisième fois.
+ *
+ * On ne peut pas importer `packages/shared` : Node ne résout pas les imports TS
+ * sans extension, et le lien `@fitia/shared` n'existe que dans `apps/*`. Cette
+ * troisième copie n'est donc pas une négligence — c'est ce qui rend le contrôle
+ * de concordance ci-dessous possible et utile.
+ */
+function phoneToAuthEmail(phone) {
+  const digits = phone.replace(/\D/g, "");
+  const normalized = digits.startsWith("225") ? digits : `225${digits}`;
+  return `${normalized}@${DOMAIN}`;
+}
+const DOMAIN = "fitia.invalid";
+
+// Contrôle de concordance : les trois définitions doivent porter le MÊME domaine.
+// Si elles divergent, un fidèle est créé sous un identifiant que l'écran de
+// connexion ne sait pas reconstruire — il ne peut plus jamais entrer, et aucun
+// message d'erreur ne dit pourquoi.
+{
+  const sources = {
+    "packages/shared/src/profile.ts": "packages/shared/src/profile.ts",
+    "supabase/functions/create-member": "supabase/functions/create-member/index.ts",
+  };
+  const domains = Object.entries(sources).map(([label, file]) => {
+    // ⚠️ Pas de `new URL(...)` ici : la constante `URL` ci-dessus masque le
+    // constructeur global. On résout depuis la racine du dépôt.
+    const text = fs.readFileSync(path.join(ROOT, file), "utf8");
+    const found = text.match(/AUTH_EMAIL_DOMAIN\s*=\s*"([^"]+)"/);
+    return [label, found?.[1]];
+  });
+  const allAgree = domains.every(([, d]) => d === DOMAIN);
+  check(
+    "le domaine d'identifiant est identique dans les 3 définitions",
+    allAgree,
+    domains.map(([l, d]) => `${l}=${d}`).join("  ") + `  script=${DOMAIN}`,
+  );
+}
 
 // Numéro unique : le script doit pouvoir être relancé sans nettoyage manuel.
 const phone = `+2250700${String(Date.now()).slice(-6)}`;
@@ -64,7 +110,11 @@ check(
 
 // 2. Le fidèle se connecte.
 const fidele = client();
-const { data: session, error: signErr } = await fidele.auth.signInWithPassword({ phone, password });
+const authEmail = phoneToAuthEmail(phone);
+const { data: session, error: signErr } = await fidele.auth.signInWithPassword({
+  email: authEmail,
+  password,
+});
 check(
   "le fidèle se connecte avec numéro + mot de passe",
   Boolean(session?.session) && !signErr,
@@ -73,7 +123,10 @@ check(
 
 // 3. Mauvais mot de passe refusé.
 const intrus = client();
-const { data: bad } = await intrus.auth.signInWithPassword({ phone, password: "MAUVAIS99" });
+const { data: bad } = await intrus.auth.signInWithPassword({
+  email: authEmail,
+  password: "MAUVAIS99",
+});
 check("un mauvais mot de passe est refusé", !bad?.session);
 
 // 5. Un fidèle ne peut pas créer de membre (avant réémission, sa session est valide).
@@ -102,11 +155,17 @@ const nouveau = reset?.password;
 check("réémission d'un mot de passe", Boolean(nouveau) && nouveau !== password, reset?.error ?? "");
 
 const apresReset = client();
-const { data: ancien } = await apresReset.auth.signInWithPassword({ phone, password });
+const { data: ancien } = await apresReset.auth.signInWithPassword({ email: authEmail, password });
 check("l'ANCIEN mot de passe ne fonctionne plus", !ancien?.session);
 
-const { data: neuf } = await client().auth.signInWithPassword({ phone, password: nouveau });
+const { data: neuf } = await client().auth.signInWithPassword({ email: authEmail, password: nouveau });
 check("le NOUVEAU mot de passe fonctionne", Boolean(neuf?.session));
+
+check(
+  "le profil garde le VRAI numéro (pas l'identifiant interne)",
+  created?.profile?.phone === phone && !created?.profile?.email,
+  `phone=${created?.profile?.phone} email=${JSON.stringify(created?.profile?.email)}`,
+);
 
 const failed = results.filter((r) => !r.ok);
 console.log(`\n${results.length - failed.length}/${results.length} vérifications passées`);

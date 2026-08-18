@@ -53,6 +53,41 @@ export function normalizePhoneCI(raw: string): string {
 }
 
 /**
+ * Domaine des identifiants internes des fidèles.
+ *
+ * `.invalid` est réservé par la RFC 2606 et ne résout JAMAIS : aucun courriel ne
+ * peut partir vers ces adresses, ni y arriver. C'est exactement ce qu'on veut —
+ * ce n'est pas une adresse, c'est un identifiant.
+ */
+export const AUTH_EMAIL_DOMAIN = "fitia.invalid";
+
+/**
+ * Traduit un numéro en identifiant d'authentification interne.
+ *
+ * POURQUOI CE DÉTOUR. Supabase n'ouvre la connexion par téléphone que si un
+ * fournisseur SMS est **déclaré** — vérifié le 2026-08-18 : sans lui,
+ * `signInWithPassword({phone})` répond « Phone logins are disabled ». Or la
+ * mosquée n'a pas de fournisseur, et n'en a pas besoin puisqu'on n'envoie aucun
+ * SMS (mot de passe, pas OTP). L'authentification e-mail, elle, ne demande rien.
+ *
+ * Le fidèle continue donc de saisir SON NUMÉRO à l'écran ; il ne voit jamais
+ * cette adresse. Le vrai numéro reste dans `profiles.phone`, colonne
+ * indépendante d'`auth.users`.
+ *
+ * ⚠️ Cette règle est dupliquée dans `supabase/functions/create-member` (Deno ne
+ * peut pas importer ce paquet). Les deux DOIVENT rester identiques, sinon un
+ * fidèle serait créé sous un identifiant que l'écran de connexion ne saurait pas
+ * reconstruire. `scripts-verif/auth-password-check.mjs` le prouve à chaque
+ * exécution : il crée par la fonction, puis se connecte par ce helper.
+ */
+export function phoneToAuthEmail(phone: string): string {
+  // On repart du numéro normalisé, sans le « + » : un même numéro doit toujours
+  // produire le même identifiant, quelle que soit sa saisie.
+  const digits = normalizePhoneCI(phone).replace(/\D/g, "");
+  return `${digits}@${AUTH_EMAIL_DOMAIN}`;
+}
+
+/**
  * `+225 07 09 11 22 33` — lisible à l'écran.
  * ⚠️ Supabase Auth stocke le numéro **sans** le « + » (ex. `2250709112233`) :
  * l'affichage brut est illisible, on regroupe donc par paires.
