@@ -180,6 +180,28 @@ Ce sont les deux seules fonctions du projet. `create-member` est
 **indispensable** : sans elle, impossible de créer un fidèle ni d'émettre un
 mot de passe, donc personne ne peut se connecter à l'application mobile.
 
+### ⛔ BLOCAGE CONNU : la connexion par téléphone exige un fournisseur SMS *déclaré*
+
+**Mesuré le 2026-08-18, pas supposé.** En passant `[auth.sms.twilio] enabled = false`
+dans `config.toml` puis en redémarrant la stack locale, `signInWithPassword({phone})`
+répond :
+
+```
+Phone logins are disabled
+```
+
+Autrement dit : le bloc Twilio en placeholder n'est **pas** décoratif — c'est lui qui
+ouvre le canal téléphone. Supabase n'active la connexion par téléphone que si un
+fournisseur SMS est déclaré, **même quand aucun SMS n'est jamais envoyé** (ce qui est
+notre cas : mot de passe, pas OTP).
+
+Conséquence pour le projet Cloud : il faudra soit déclarer un fournisseur SMS (un
+compte Twilio d'essai suffit — aucun SMS ne partant jamais, il ne sera pas facturé),
+soit changer d'identifiant d'authentification. **À trancher avant `config push`.**
+
+⚠️ Et surtout : **ne pas lancer `supabase config push` tel quel**. Il enverrait vers la
+production le bloc Twilio en placeholder *et* le numéro de test `[auth.sms.test_otp]`.
+
 ### 2. Créer le premier compte du bureau
 
 ⚠️ **Sans cette étape, personne ne peut entrer.** L'Edge Function `create-member`
