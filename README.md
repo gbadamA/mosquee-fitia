@@ -150,6 +150,26 @@ La `DIRECT_URL` garde toutefois une utilité ponctuelle : voir l'encadré IPv6 c
 
 #### Pousser le schéma
 
+> ✅ **Fait le 2026-08-18** : les 8 migrations sont appliquées sur le projet Cloud,
+> et `create-member` / `send-push` sont déployées. Vérifié — `migration list --linked`
+> montre `local` = `remote` sur les 8, `create-member` refuse un appel sans session
+> (`UNAUTHORIZED_NO_AUTH_HEADER`) et `profiles` renvoie `[]` aux anonymes (la RLS tient).
+
+> ⛔ **LANCER CES COMMANDES DEPUIS LA RACINE DU PROJET.** Depuis un autre dossier,
+> `db push` ne trouve aucune migration locale, en conclut que tout va bien et affiche :
+>
+> ```
+> Remote database is up to date.
+> ```
+>
+> **C'est un faux succès** — rien n'a été poussé. Piège réellement rencontré le
+> 2026-08-18 (commandes lancées depuis `C:\Users\mutiy`). Seul `functions deploy` a
+> protesté, parce qu'il cherchait un fichier précis. Contrôler avec
+> `supabase migration list --linked` : la colonne `remote` doit être remplie.
+>
+> Le CLI laisse alors un dossier `supabase/.temp/` parasite dans le mauvais
+> répertoire, qui reciblera le projet aux prochaines commandes : le supprimer.
+
 ```bash
 npx supabase@latest link --project-ref rjumgzqcqbdukvgnfyok
 ```
