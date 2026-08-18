@@ -23,6 +23,22 @@ dist
 **/.env
 **/.env.*
 
+# ...SAUF `.env.production`, qui ne contient que des valeurs publiques (URL du
+# projet Supabase + clé `anon`, toutes deux inscrites dans le bundle client de
+# toute façon — voir l'en-tête du fichier). Sans lui, l'image se construirait
+# avec des variables vides et le tableau de bord afficherait
+# « Backend non configuré ».
+#
+# Les variables définies par l'hébergeur restent prioritaires : `process.env`
+# issu du shell l'emporte sur les fichiers `.env`. Renseigner les deux clés dans
+# l'interface Render continue donc de fonctionner et de primer.
+# ⚠️ NON VÉRIFIÉ PAR UN BUILD : Docker Desktop est tombé avant que je puisse le
+# prouver (2026-08-18). La négation devrait fonctionner — `.env.*` est un motif de
+# FICHIER, pas de répertoire, et la règle la plus tardive l'emporte — mais à
+# confirmer par un `docker build` avant de s'y fier pour un déploiement Render.
+!.env.production
+!**/.env.production
+
 # Outillage local sans objet en production.
 supabase/.temp
 scripts-verif
