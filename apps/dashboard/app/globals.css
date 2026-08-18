@@ -39,6 +39,27 @@ body {
 }
 
 /* ===========================================================================
+   Repli des catégories du menu latéral — léger glissement à l'ouverture.
+   Respecte le réglage système « réduire les animations ».
+   =========================================================================== */
+@media (prefers-reduced-motion: no-preference) {
+  .menu-groupe__corps {
+    animation: menu-groupe-glisse 0.16s ease;
+  }
+}
+
+@keyframes menu-groupe-glisse {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===========================================================================
    Soulèvement des cadres au survol — appliqué à TOUS les compartiments.
    Couvre : cartes sémantiques (article/section/li bordés), .shadow-card et .lift.
    Les champs de formulaire (input/select/textarea) sont exclus volontairement.
