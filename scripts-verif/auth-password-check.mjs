@@ -41,11 +41,18 @@ if (loginErr) {
 const { data: created, error: createErr } = await secretaire.functions.invoke("create-member", {
   body: { kind: "fidele", full_name: "Fidèle Vérification", phone, quartier: "Abobo" },
 });
+// Même piège que côté dashboard : `.message` est toujours le texte générique
+// « non-2xx status code ». Le motif réel n'est que dans `error.context`.
+const createDetail = createErr?.context
+  ? `HTTP ${createErr.context.status} — ${JSON.stringify(
+      await createErr.context.json().catch(() => createErr.context.text().catch(() => null)),
+    )}`
+  : createErr?.message;
 const password = created?.password;
 check(
   "création d'un fidèle → mot de passe renvoyé une fois",
   Boolean(password) && !createErr,
-  createErr?.message ?? (password ? `8 caractères : ${password.length === 8}` : "aucun mot de passe"),
+  createDetail ?? (password ? `8 caractères : ${password.length === 8}` : "aucun mot de passe"),
 );
 if (!password) process.exit(1);
 

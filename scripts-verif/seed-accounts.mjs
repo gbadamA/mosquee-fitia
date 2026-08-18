@@ -4,10 +4,22 @@
  * Les comptes passent par l'API Auth (pas par SQL) : le trigger `handle_new_user`
  * crée le profil, puis on lui applique le bon rôle avec la clé service_role.
  *
- * Usage :
- *   SUPABASE_URL=http://127.0.0.1:54131 \
+ * Usage en local :
  *   SUPABASE_SERVICE_ROLE_KEY=<clé affichée par `supabase start`> \
  *   node scripts-verif/seed-accounts.mjs
+ *
+ * AMORÇAGE D'UN PROJET SUPABASE CLOUD — c'est le SEUL moyen de créer le premier
+ * compte du bureau. L'Edge Function `create-member` exige un appelant déjà
+ * imam/admin ; sur une base neuve il n'en existe aucun. Ce script contourne le
+ * problème par la clé `service_role`, qui ignore la RLS.
+ *
+ *   SUPABASE_URL=https://rjumgzqcqbdukvgnfyok.supabase.co \
+ *   SUPABASE_SERVICE_ROLE_KEY=<Project Settings → API → service_role> \
+ *   SEED_PASSWORD="<mot de passe fort>" \
+ *   node scripts-verif/seed-accounts.mjs
+ *
+ * ⛔ La clé `service_role` contourne toute la sécurité : jamais dans le dépôt,
+ * jamais dans un bundle client, jamais chez Render.
  */
 import { createClient } from "@supabase/supabase-js";
 
@@ -31,7 +43,26 @@ const ACCOUNTS = [
   { email: "secretaire@fitia.ci", full_name: "Secrétaire Diaby", role: "secretaire" },
 ];
 
-const PASSWORD = "fitia1234";
+// ⚠️ `fitia1234` est écrit dans le README : il ne vaut que pour la stack locale.
+// Pour amorcer le projet Supabase Cloud, imposer SEED_PASSWORD — sinon les comptes
+// du bureau seraient protégés par un mot de passe public.
+const PASSWORD = process.env.SEED_PASSWORD ?? "fitia1234";
+
+// L'URL par défaut vise le local. Si on pointe ailleurs SANS choisir de mot de
+// passe, on créerait des comptes ouverts à quiconque a lu le dépôt : on refuse.
+const isLocal = /127\.0\.0\.1|localhost/.test(url);
+if (!isLocal && !process.env.SEED_PASSWORD) {
+  console.error(
+    `Refus : ${url} n'est pas la stack locale et SEED_PASSWORD n'est pas défini.\n` +
+      "Le mot de passe par défaut est publié dans le README — le poser sur une\n" +
+      "instance en ligne reviendrait à laisser les comptes du bureau ouverts.\n\n" +
+      'Relancer avec :  SEED_PASSWORD="<mot de passe fort>" node scripts-verif/seed-accounts.mjs',
+  );
+  process.exit(1);
+}
+
+// Le fidèle de test n'a rien à faire en production.
+const withTestFidele = isLocal && process.env.SEED_SKIP_TEST_FIDELE !== "1";
 
 for (const account of ACCOUNTS) {
   const { data, error } = await admin.auth.admin.createUser({
@@ -76,6 +107,15 @@ for (const account of ACCOUNTS) {
 // qui ouvrirait une session sans compte existant. Sans ce bloc, il n'y aurait
 // aucun moyen d'ouvrir l'app mobile en local.
 const FIDELE_PHONE = "+22507000000";
+
+if (!withTestFidele) {
+  console.log(
+    isLocal
+      ? "\n(fidèle de test ignoré : SEED_SKIP_TEST_FIDELE=1)"
+      : "\n(fidèle de test ignoré : instance non locale)",
+  );
+  process.exit(0);
+}
 
 const { data: fidele, error: fideleError } = await admin.auth.admin.createUser({
   phone: FIDELE_PHONE,

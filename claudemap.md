@@ -368,8 +368,30 @@ API NestJS à héberger. Ici **Supabase EST le backend** : il n'y a pas d'API à
 | Edge Functions `create-member`, `send-push` | **Supabase**, jamais Render |
 | Application mobile | build **EAS** — aucun serveur web |
 
+**Projet Supabase Cloud (décidé le 2026-08-18) — sur le SECOND compte Supabase de
+l'utilisateur** : ref `rjumgzqcqbdukvgnfyok`, région `eu-central-1` (Francfort),
+URL `https://rjumgzqcqbdukvgnfyok.supabase.co`. Même région que le service Render
+(`frankfurt`), donc latence minimale entre le tableau de bord et la base.
+
 ⚠️ **Ne JAMAIS créer de PostgreSQL chez Render** : le plan gratuit expire et emporte
 les données. C'est ce qui a mis PREVENTIX 360 hors service.
+
+⛔ **`DATABASE_URL` / `DIRECT_URL` ne servent à RIEN ici.** Les chaînes de connexion
+Postgres affichées par Supabase (onglet Connect → ORMs) s'adressent à Prisma, Drizzle
+ou TypeORM ; ce projet n'en utilise aucun — vérifié, le mot `DATABASE_URL` n'apparaît
+nulle part dans le dépôt. Tout passe par `@supabase/supabase-js` en HTTP, et les
+migrations par le CLI. Ne pas déclarer ces variables chez Render : elles ne seraient
+jamais lues et y coller le mot de passe Postgres l'exposerait pour rien.
+Seule utilité de la `DIRECT_URL` : `supabase db push --db-url "<…pooler…:5432…>"` si la
+connexion directe échoue, les connexions Postgres directes étant en **IPv6** (beaucoup
+de FAI ne le routent pas). Port **5432** (mode session) et non 6543 — le mode
+transaction ne sait pas exécuter de migrations.
+
+⚠️ **Amorçage : `create-member` ne peut PAS créer le premier compte.** Elle exige un
+appelant déjà imam/admin, et une base neuve n'en a aucun. Le seul chemin est
+`scripts-verif/seed-accounts.mjs` avec la clé `service_role` (qui ignore la RLS). Le
+script **refuse de tourner hors localhost sans `SEED_PASSWORD`** : son défaut
+`fitia1234` est publié dans le README, il laisserait les comptes du bureau ouverts.
 
 Les deux seules fonctions à déployer sont `create-member` et `send-push`.
 

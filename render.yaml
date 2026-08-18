@@ -52,8 +52,18 @@ services:
       # (préfixe `NEXT_PUBLIC_`). Les modifier impose de RECONSTRUIRE le
       # service — un simple redémarrage ne suffira pas.
       #
-      # À récupérer dans le projet Supabase Cloud :
-      #   Project Settings → API → Project URL et anon/public key
+      # Projet Supabase Cloud (second compte de l'utilisateur, 2026-08-18) :
+      #   ref    rjumgzqcqbdukvgnfyok
+      #   région eu-central-1 (Francfort) — la même que ce service, donc
+      #          latence minimale entre le tableau de bord et la base
+      #
+      #   NEXT_PUBLIC_SUPABASE_URL      = https://rjumgzqcqbdukvgnfyok.supabase.co
+      #   NEXT_PUBLIC_SUPABASE_ANON_KEY = Project Settings → API → anon/public key
+      #
+      # ⛔ NE PAS AJOUTER `DATABASE_URL` NI `DIRECT_URL` ICI. Les chaînes de
+      # connexion Postgres affichées par Supabase s'adressent à Prisma / Drizzle /
+      # TypeORM ; ce projet n'en utilise aucun et ne lira jamais ces variables.
+      # Y coller le mot de passe Postgres l'exposerait pour rien.
       - key: NEXT_PUBLIC_SUPABASE_URL
         sync: false
       - key: NEXT_PUBLIC_SUPABASE_ANON_KEY

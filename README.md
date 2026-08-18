@@ -122,28 +122,87 @@ HadjChanges héberge une API NestJS qu'il faut faire tourner quelque part. Ici,
 | Edge Functions `create-member`, `send-push` | **Supabase**, pas Render |
 | Application mobile | build **EAS** — aucun serveur web |
 
-### 1. Créer le projet Supabase Cloud
+### 1. Le projet Supabase Cloud
 
-Sur [supabase.com](https://supabase.com), nouveau projet, région Europe.
-Puis pousser le schéma depuis ce dépôt :
+Projet créé sur le **second compte Supabase** de l'utilisateur (décision du 2026-08-18) :
+
+| | |
+|---|---|
+| Référence du projet | `rjumgzqcqbdukvgnfyok` |
+| Région | `eu-central-1` (Francfort) |
+| URL de l'API | `https://rjumgzqcqbdukvgnfyok.supabase.co` |
+
+> ✅ La région colle à celle du service Render (`frankfurt`) : le tableau de bord
+> et la base sont dans le même datacenter, la latence reste minimale.
+
+#### ⚠️ `DATABASE_URL` / `DIRECT_URL` ne servent PAS à ce projet
+
+Les deux chaînes de connexion proposées par Supabase (onglet **Connect → ORMs**)
+s'adressent à Prisma, Drizzle ou TypeORM. **Ce projet n'en utilise aucun** : il
+parle à Supabase en HTTP via `@supabase/supabase-js`, et les migrations passent
+par le CLI. Il n'existe aucune variable `DATABASE_URL` dans le dépôt — inutile
+d'en déclarer une chez Render, elle ne serait jamais lue.
+
+Ce dont l'application a besoin, ce sont uniquement l'**URL du projet** et la
+**clé `anon`** (Project Settings → API).
+
+La `DIRECT_URL` garde toutefois une utilité ponctuelle : voir l'encadré IPv6 ci-dessous.
+
+#### Pousser le schéma
 
 ```bash
-npx supabase@latest link --project-ref <ref-du-projet>
+npx supabase@latest link --project-ref rjumgzqcqbdukvgnfyok
 ```
 
 ```bash
 npx supabase@latest db push
 ```
 
-Déployer les fonctions serveur :
+> 💡 **Si `db push` échoue en « connection refused » / « network unreachable »** :
+> les connexions directes à Postgres sont en **IPv6**, que beaucoup de FAI ne
+> routent pas. C'est là que sert la `DIRECT_URL` (pooler en mode session, IPv4,
+> port **5432** — surtout pas 6543, le mode transaction ne sait pas exécuter de
+> migrations) :
+>
+> ```bash
+> npx supabase@latest db push --db-url "postgresql://postgres.rjumgzqcqbdukvgnfyok:MOT_DE_PASSE@aws-0-eu-central-1.pooler.supabase.com:5432/postgres"
+> ```
+>
+> ⛔ Ne jamais écrire ce mot de passe dans un fichier du dépôt.
+
+#### Déployer les fonctions serveur
 
 ```bash
 npx supabase@latest functions deploy create-member send-push
 ```
 
-Ce sont les deux seules fonctions du projet.
+Ce sont les deux seules fonctions du projet. `create-member` est
+**indispensable** : sans elle, impossible de créer un fidèle ni d'émettre un
+mot de passe, donc personne ne peut se connecter à l'application mobile.
 
-### 2. Déployer le tableau de bord sur Render
+### 2. Créer le premier compte du bureau
+
+⚠️ **Sans cette étape, personne ne peut entrer.** L'Edge Function `create-member`
+exige un appelant déjà imam/admin ; sur une base neuve il n'en existe aucun.
+Le seul moyen d'amorcer est le script de seed, qui utilise la clé `service_role`
+(elle ignore la RLS) :
+
+```bash
+SUPABASE_URL=https://rjumgzqcqbdukvgnfyok.supabase.co SUPABASE_SERVICE_ROLE_KEY="<service_role>" SEED_PASSWORD="<mot de passe fort>" node scripts-verif/seed-accounts.mjs
+```
+
+Le script **refuse de s'exécuter** sur une instance non locale sans `SEED_PASSWORD` :
+le mot de passe par défaut (`fitia1234`) est publié dans ce README, il laisserait
+les comptes du bureau ouverts à qui l'a lu. Le fidèle de test `+22507000000` n'est
+créé qu'en local.
+
+⛔ La clé `service_role` contourne toute la sécurité : jamais dans le dépôt, jamais
+chez Render, jamais dans un bundle client. Elle ne sert qu'à cette commande.
+
+Ensuite, tout se fait depuis l'interface : le compte imam crée les autres comptes
+du bureau (Administration) et les fidèles (Fidèles).
+
+### 3. Déployer le tableau de bord sur Render
 
 Sur [render.com](https://render.com) → **New → Blueprint**, pointer le dépôt
 `gbadamA/mosquee-fitia`. Render lit `render.yaml` et crée le service.
@@ -153,13 +212,16 @@ Renseigner ensuite les deux secrets dans l'interface Render
 
 | Variable | Valeur |
 |---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | l'URL du projet Supabase |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | la clé `anon` / `public` |
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://rjumgzqcqbdukvgnfyok.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | la clé `anon` / `public` du projet |
+
+⛔ **Ne pas ajouter `DATABASE_URL` ni `DIRECT_URL` chez Render** : rien ne les lit
+(voir plus haut), et y coller le mot de passe Postgres l'exposerait sans raison.
 
 ⚠️ Ces deux valeurs sont **inscrites dans le bundle à la construction**. Les
 modifier impose de **reconstruire** le service — un redémarrage ne suffit pas.
 
-### 3. Ce que le plan gratuit implique
+### 4. Ce que le plan gratuit implique
 
 - **Ne créez PAS de PostgreSQL chez Render.** Le gratuit expire et emporte les
   données — c'est ce qui a mis PREVENTIX 360 hors service. La base reste chez Supabase.
@@ -169,7 +231,7 @@ modifier impose de **reconstruire** le service — un redémarrage ne suffit pas
 - **Le disque est éphémère** — sans conséquence ici : le tableau de bord n'écrit
   rien localement, les justificatifs vont dans Supabase Storage.
 
-### 4. À faire avant la mise en service réelle
+### 5. À faire avant la mise en service réelle
 
 - [x] ~~Retirer le contournement de connexion~~ — `dev-login` et le code client
       supprimés le 2026-08-08 ; il n'existe plus qu'un seul chemin de connexion
@@ -181,7 +243,10 @@ modifier impose de **reconstruire** le service — un redémarrage ne suffit pas
       puis restaurer le parcours depuis le commit `db27816`.
 - [ ] **Émettre un mot de passe pour les fidèles déjà enregistrés** — ceux créés
       avant le 2026-08-17 n'en ont aucun. Fiche du fidèle → *Émettre un mot de passe*.
-- [ ] Pointer `apps/mobile/.env` sur l'URL Supabase Cloud, puis build EAS
+      (Sans objet si la base Cloud part de zéro : les 9 profils de test ne vivent
+      que dans la stack locale, `db push` ne pousse que le schéma, pas les données.)
+- [ ] Pointer `apps/mobile/.env` sur `https://rjumgzqcqbdukvgnfyok.supabase.co`,
+      puis **reconstruire** (les `EXPO_PUBLIC_*` sont figées dans le bundle)
 
 ---
 
