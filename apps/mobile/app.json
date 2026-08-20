@@ -21,12 +21,19 @@
         "backgroundColor": "#071410"
       }
     },
-    "plugins": ["expo-router", "expo-notifications"],
+    "plugins": [
+      "expo-router",
+      "expo-notifications"
+    ],
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
-      "router": {}
-    }
+      "router": {},
+      "eas": {
+        "projectId": "a379a648-3590-4e3a-8806-0be5f4c5565b"
+      }
+    },
+    "owner": "gbadamutiyu"
   }
 }
