@@ -1,4 +1,5 @@
 import { Tabs } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Clock, Megaphone, CalendarDays, User } from "lucide-react-native";
 import { useMosque, useBrand } from "../../lib/mosque";
 import { useThemeColors } from "../../lib/theme";
@@ -7,6 +8,11 @@ export default function TabsLayout() {
   const mosque = useMosque();
   const brandColors = useBrand(mosque);
   const colors = useThemeColors();
+  // Sur un téléphone à gestes, la barre système occupe le bas de l'écran.
+  // Fixer `height` et `paddingBottom` en dur neutralise la compensation
+  // automatique de React Navigation : nos onglets passaient alors SOUS la
+  // barre d'Android, et les deux se confondaient. On réintègre donc l'inset.
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
@@ -18,8 +24,8 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
-          height: 62,
-          paddingBottom: 8,
+          height: 62 + insets.bottom,
+          paddingBottom: 8 + insets.bottom,
           paddingTop: 8,
         },
         tabBarLabelStyle: { fontSize: 11 },
