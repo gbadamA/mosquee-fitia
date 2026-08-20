@@ -7,3 +7,13 @@ dist/
 .env.local
 *.log
 supabase/.temp/
+
+# ── Secrets de notifications push (FCM) ──────────────────────────────────────
+# ⚠️ Ce dépôt est PUBLIC. La clé de compte de service Firebase permet d'envoyer
+# des notifications au nom de la mosquée : elle ne doit jamais y entrer.
+# (`google-services.json`, lui, est embarqué dans l'APK et n'est pas un secret —
+# on l'ignore quand même : il désigne le projet Firebase, autant ne pas l'exposer.)
+google-services.json
+**/google-services.json
+*-firebase-adminsdk-*.json
+service-account*.json

@@ -17,6 +17,7 @@
     },
     "android": {
       "package": "ci.mosquee.fitia",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#071410"
       }
