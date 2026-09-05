@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
@@ -201,9 +202,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Menu latéral */}
       <aside className="hidden w-64 flex-col border-r border-light-border bg-light-surface p-4 dark:border-dark-border dark:bg-dark-surface md:flex print:hidden">
         <div className="mb-8 flex items-center gap-2.5 px-2">
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-emerald">
-            <Moon className="h-4 w-4 text-white" />
-          </span>
+          <Image
+            src="/logo.png"
+            alt=""
+            width={40}
+            height={40}
+            className="h-10 w-10 shrink-0 object-contain"
+          />
           <span className="font-display text-lg font-bold leading-tight">
             Mosquée Fitya
             <span className="block text-[11px] font-normal text-light-muted dark:text-dark-muted">

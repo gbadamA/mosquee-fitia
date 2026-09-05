@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Moon, LogIn } from "lucide-react";
+import Image from "next/image";
+import { LogIn } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
 
@@ -44,10 +45,16 @@ export default function LoginPage() {
     <main className="flex min-h-screen items-center justify-center px-6">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center text-center">
-          <span className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-lg bg-emerald shadow-glow">
-            <Moon className="h-6 w-6 text-white" />
-          </span>
-          <h1 className="font-display text-h1">Mosquée Fitya</h1>
+          {/* Le logo se suffit à lui-même : il porte déjà le nom et le lieu. */}
+          <Image
+            src="/logo.png"
+            alt="Mosquée Fitya — Abobo"
+            width={160}
+            height={160}
+            priority
+            className="mb-4 h-40 w-auto"
+          />
+          <h1 className="sr-only">Mosquée Fitya</h1>
           <p className="text-caption text-light-muted dark:text-dark-muted">
             Espace d&apos;administration — Petro Ivoire, Abobo
           </p>

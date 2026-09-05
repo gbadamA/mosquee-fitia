@@ -6,6 +6,9 @@ import { ThemeProvider, themeBootstrapScript } from "@/lib/theme";
 export const metadata: Metadata = {
   title: "Mosquée Fitya — Administration",
   description: "Back-office de la Mosquée Fitya (Petro Ivoire, Abobo)",
+  // L'emblème complet est illisible à 32 px : le favicon est cadré sur le
+  // bâtiment, qui reste identifiable par sa silhouette et ses couleurs.
+  icons: { icon: "/favicon.ico" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
