@@ -13,20 +13,22 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Marque (indépendant du thème)
-        primary: { DEFAULT: "#0B7A3B", hover: "#086130" },
-        secondary: { DEFAULT: "#C9A227", hover: "#A9871C" },
-        tertiary: "#0E9F6E",
+        // Marque (indépendant du thème) — voir index.ts pour la règle de contraste :
+        // `building` et `secondary` ne portent QUE du texte sombre.
+        primary: { DEFAULT: "#0C4B20", hover: "#093A19" },
+        building: "#5DA85A",
+        secondary: { DEFAULT: "#C29C29", hover: "#A78420" },
+        tertiary: "#15803D",
         success: "#12B76A",
         warning: "#F59E0B",
         danger: "#DC2626",
         // Dégradé signature
-        emerald: { start: "#064E3B", mid: "#0B7A3B", end: "#C9A227" },
+        emerald: { start: "#093A19", mid: "#5DA85A", end: "#C29C29" },
         // Prières
         prayer: {
           fajr: "#1E3A8A",
           dhuhr: "#0E9F6E",
-          asr: "#C9A227",
+          asr: "#C29C29",
           maghrib: "#C2410C",
           isha: "#4C1D95",
         },
@@ -68,13 +70,13 @@ module.exports = {
         caption: ["13px", { lineHeight: "18px" }],
       },
       backgroundImage: {
-        emerald: "linear-gradient(135deg, #064E3B 0%, #0B7A3B 55%, #C9A227 100%)",
-        "emerald-deep": "linear-gradient(135deg, #053A2C 0%, #0B7A3B 100%)",
+        emerald: "linear-gradient(135deg, #093A19 0%, #5DA85A 55%, #C29C29 100%)",
+        "emerald-deep": "linear-gradient(135deg, #072F14 0%, #0C4B20 100%)",
       },
       boxShadow: {
-        card: "0 8px 24px rgba(11, 122, 59, 0.12)",
-        glow: "0 0 20px rgba(11, 122, 59, 0.35)",
-        gold: "0 0 18px rgba(201, 162, 39, 0.35)",
+        card: "0 8px 24px rgba(12, 75, 32, 0.12)",
+        glow: "0 0 20px rgba(12, 75, 32, 0.35)",
+        gold: "0 0 18px rgba(194, 156, 41, 0.35)",
       },
     },
   },

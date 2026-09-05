@@ -4,8 +4,8 @@ import { AuthProvider } from "@/lib/auth";
 import { ThemeProvider, themeBootstrapScript } from "@/lib/theme";
 
 export const metadata: Metadata = {
-  title: "Mosquée Fitia — Administration",
-  description: "Back-office de la Mosquée Fitia (Petro Ivoire, Abobo)",
+  title: "Mosquée Fitya — Administration",
+  description: "Back-office de la Mosquée Fitya (Petro Ivoire, Abobo)",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

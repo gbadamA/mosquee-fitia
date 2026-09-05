@@ -21,8 +21,8 @@ export const CATEGORY_META: Record<
   { label: string; color: string; emoji: string }
 > = {
   info: { label: "Info", color: "#0E9F6E", emoji: "📢" },
-  khutba: { label: "Khutba", color: "#0B7A3B", emoji: "🕌" },
-  evenement: { label: "Événement", color: "#C9A227", emoji: "📅" },
+  khutba: { label: "Khutba", color: "#0C4B20", emoji: "🕌" },
+  evenement: { label: "Événement", color: "#C29C29", emoji: "📅" },
   urgent: { label: "Urgent", color: "#DC2626", emoji: "🚨" },
   collecte: { label: "Collecte", color: "#4C1D95", emoji: "🤲" },
 };

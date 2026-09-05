@@ -1,4 +1,4 @@
-# Mosquée Fitia — système de gestion
+# Mosquée Fitya — système de gestion
 
 Application mobile (fidèles) + dashboard web (bureau de la mosquée), adossés à Supabase.
 Architecture reprise du projet `asso-jeunes`, direction artistique « vert islamique & or ».

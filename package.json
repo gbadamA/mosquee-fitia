@@ -2,7 +2,7 @@
   "name": "mosquee-fitia",
   "version": "0.0.0",
   "private": true,
-  "description": "Système de gestion de la Mosquée Fitia (Petro Ivoire, Abobo) — mobile (Expo) + dashboard (Next.js) + Supabase",
+  "description": "Système de gestion de la Mosquée Fitya (Petro Ivoire, Abobo) — mobile (Expo) + dashboard (Next.js) + Supabase",
   "packageManager": "pnpm@10.33.0",
   "engines": {
     "node": ">=20"

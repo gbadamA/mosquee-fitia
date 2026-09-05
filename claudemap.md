@@ -1,4 +1,4 @@
-# 🕌 CLAUDEMAP — Mosquée Fitia (Petro Ivoire, Abobo)
+# 🕌 CLAUDEMAP — Mosquée Fitya (Petro Ivoire, Abobo)
 
 > Carte maîtresse du projet. Lue en priorité par Claude Code au démarrage de chaque session.
 > Elle définit **quoi** construire, **avec quelle stack**, **dans quel ordre**, et surtout **à quoi ça doit ressembler**.
@@ -10,8 +10,8 @@
 
 | | |
 |---|---|
-| **Nom de travail** | MOSQUÉE FITIA |
-| **Établissement** | Mosquée Fitia, dite « Petro Ivoire » — Abobo, Abidjan (CI) |
+| **Nom de travail** | MOSQUÉE FITYA |
+| **Établissement** | Mosquée Fitya, dite « Petro Ivoire » — Abobo, Abidjan (CI) |
 | **Type** | App mobile (Android priorité, iOS ensuite) + Dashboard web back-office |
 | **Cible** | Fidèles, imam, trésorier, secrétaire, comité de gestion |
 | **Marché** | Côte d'Ivoire / Afrique de l'Ouest francophone |

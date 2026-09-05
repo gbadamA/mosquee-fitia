@@ -14,9 +14,9 @@ export const eventTypeSchema = z.enum([
 export type EventType = z.infer<typeof eventTypeSchema>;
 
 export const EVENT_TYPE_META: Record<EventType, { label: string; emoji: string; color: string }> = {
-  djouma: { label: "Djouma", emoji: "🕌", color: "#0B7A3B" },
+  djouma: { label: "Djouma", emoji: "🕌", color: "#0C4B20" },
   conference: { label: "Conférence", emoji: "🎙️", color: "#0E9F6E" },
-  aid: { label: "Aïd", emoji: "🌙", color: "#C9A227" },
+  aid: { label: "Aïd", emoji: "🌙", color: "#C29C29" },
   ramadan: { label: "Ramadan", emoji: "🌙", color: "#4C1D95" },
   janazah: { label: "Salat al-Janazah", emoji: "🤲", color: "#5B6B62" },
   cours: { label: "Cours", emoji: "📖", color: "#1E3A8A" },

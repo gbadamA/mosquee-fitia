@@ -91,7 +91,7 @@ export default function Login() {
               <Moon color="#fff" size={30} />
             </View>
             <Text className="font-display text-2xl font-bold text-white">
-              {mosque?.name ?? "Mosquée Fitia"}
+              {mosque?.name ?? "Mosquée Fitya"}
             </Text>
             <Text className="text-white/80">
               {[mosque?.address, mosque?.city].filter(Boolean).join(" · ") || "Abobo · Abidjan"}

@@ -1,14 +1,16 @@
 {
   "expo": {
-    "name": "Mosquée Fitia",
+    "name": "Mosquée Fitya",
     "slug": "mosquee-fitia",
     "scheme": "mosqueefitia",
     "version": "0.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "icon": "./assets/icon.png",
     "splash": {
-      "backgroundColor": "#071410",
+      "image": "./assets/splash.png",
+      "backgroundColor": "#FFFFFF",
       "resizeMode": "contain"
     },
     "ios": {
@@ -19,7 +21,8 @@
       "package": "ci.mosquee.fitia",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "backgroundColor": "#071410"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
       }
     },
     "plugins": [

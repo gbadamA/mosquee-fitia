@@ -1,4 +1,4 @@
-# Cahier des charges — Système de gestion de la Mosquée Fitia
+# Cahier des charges — Système de gestion de la Mosquée Fitya
 
 > Fusion des deux cahiers d'origine (`cahier-des-charges-gestion-mosquee.md` pour le back-office
 > et `cahier-des-charges-mobile-mosquee.md` pour l'application mobile), ajustée aux décisions
@@ -9,7 +9,7 @@
 
 ## 1. Contexte
 
-La **Mosquée Fitia**, dite « Petro Ivoire », à **Abobo (Abidjan, Côte d'Ivoire)**, souhaite gérer
+La **Mosquée Fitya**, dite « Petro Ivoire », à **Abobo (Abidjan, Côte d'Ivoire)**, souhaite gérer
 de manière centralisée ses activités administratives, financières et communautaires, et offrir à
 ses fidèles un service quotidien simple : connaître les horaires de prière, recevoir les annonces
 de l'imam, et contribuer financièrement en toute transparence.

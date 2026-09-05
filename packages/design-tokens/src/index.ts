@@ -2,30 +2,44 @@
  * Source de vérité visuelle — consommée par le mobile (NativeWind) ET le dashboard (Tailwind).
  * Aucune couleur / rayon en dur ailleurs dans le code : tout part d'ici.
  *
- * DA « vert islamique & or » — Mosquée Fitia (Petro Ivoire, Abobo).
- * Le vert profond porte l'identité cultuelle et fait écho au vert de Petro Ivoire ;
- * l'or sert d'accent rare (calligraphie, motifs, bordures), jamais de fond de texte clair.
+ * DA tirée du LOGO officiel — emblème circulaire « FITYA D'ABOBO / MOSQUEE FITYA ».
+ * L'identité y tient à deux couleurs : le vert forêt de l'anneau et du nom, l'or
+ * de l'arc intérieur et du sous-titre. Le vert clair n'appartient qu'au bâtiment
+ * illustré à l'intérieur de l'emblème — c'est un détail d'illustration, pas la
+ * couleur de marque : le prendre pour tel donnerait une interface vert pomme,
+ * là où le logo est sobre et profond.
+ *
+ * Valeurs échantillonnées directement dans le fichier du logo, pas estimées à
+ * l'œil : l'anneau et le nom donnent `primary`, l'arc et le sous-titre donnent
+ * `secondary`, le bâtiment illustré donne `building`.
+ *
+ * ⚠️ Contraste mesuré sur blanc, non négociable : `secondary` (2,60:1) et
+ * `building` (2,91:1) sont ILLISIBLES sous du texte blanc. Ils ne portent que
+ * du texte sombre, ou aucun texte. Seul `primary` (10,28:1) porte du blanc.
  */
 
 /** Dégradé signature (135°) : bannières, en-têtes, carte de fidèle, boutons primaires. */
 export const gradient = {
-  emerald: ["#064E3B", "#0B7A3B", "#C9A227"] as const,
+  /** Forêt → bâtiment → or : l'emblème lu de l'anneau vers son centre. */
+  emerald: ["#093A19", "#5DA85A", "#C29C29"] as const,
   /** Variante sobre (sans or) pour les grandes surfaces. */
-  deep: ["#053A2C", "#0B7A3B"] as const,
+  deep: ["#072F14", "#0C4B20"] as const,
   angle: 135,
 };
 
 /**
  * Couleurs de marque (indépendantes du thème).
- * ⚠️ Contraste : `secondary` (or) ne porte QUE du texte sombre (`palette.light.text`).
- *    Le vert `primary` ne porte QUE du texte blanc.
+ * ⚠️ Contraste : `secondary` (or) et `building` ne portent QUE du texte sombre
+ *    (`palette.light.text`). Le vert `primary` ne porte QUE du texte blanc.
  */
 export const brand = {
-  primary: "#0B7A3B", // vert profond — actions
-  primaryHover: "#086130",
-  secondary: "#C9A227", // or — accents, décor, badges
-  secondaryHover: "#A9871C",
-  tertiary: "#0E9F6E", // émeraude clair — liens / focus
+  primary: "#0C4B20", // vert forêt du logo — actions (10,28:1 sur blanc)
+  primaryHover: "#093A19",
+  /** Vert du bâtiment dans l'emblème — décor uniquement, jamais sous du blanc. */
+  building: "#5DA85A",
+  secondary: "#C29C29", // or du logo — accents, décor, badges
+  secondaryHover: "#A78420",
+  tertiary: "#15803D", // vert moyen — liens, anneaux de focus (5,02:1)
   success: "#12B76A",
   warning: "#F59E0B",
   danger: "#DC2626",
@@ -55,7 +69,7 @@ export const palette = {
 export const prayerColors = {
   fajr: "#1E3A8A", // aube — bleu nuit
   dhuhr: "#0E9F6E", // midi — émeraude
-  asr: "#C9A227", // après-midi — or
+  asr: "#C29C29", // après-midi — or du logo
   maghrib: "#C2410C", // coucher — cuivre
   isha: "#4C1D95", // nuit — violet profond
 } as const;
@@ -101,9 +115,9 @@ export const typography = {
 
 /** Ombres douces teintées vert plutôt que noires pures. */
 export const shadows = {
-  card: "0 8px 24px rgba(11, 122, 59, 0.12)",
-  glow: "0 0 20px rgba(11, 122, 59, 0.35)",
-  gold: "0 0 18px rgba(201, 162, 39, 0.35)",
+  card: "0 8px 24px rgba(12, 75, 32, 0.12)",
+  glow: "0 0 20px rgba(12, 75, 32, 0.35)",
+  gold: "0 0 18px rgba(194, 156, 41, 0.35)",
 };
 
 export type ThemeName = keyof typeof palette;

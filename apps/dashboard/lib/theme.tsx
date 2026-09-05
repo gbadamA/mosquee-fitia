@@ -90,10 +90,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         const secondary = data.secondary_color;
         const root = document.documentElement.style;
 
-        root.setProperty("--c-primary", hexToRgbChannels(primary, "#0B7A3B"));
-        root.setProperty("--c-primary-hover", hexToRgbChannels(darken(primary), "#086130"));
-        root.setProperty("--c-secondary", hexToRgbChannels(secondary, "#C9A227"));
-        root.setProperty("--c-secondary-hover", hexToRgbChannels(darken(secondary), "#A9871C"));
+        root.setProperty("--c-primary", hexToRgbChannels(primary, "#0C4B20"));
+        root.setProperty("--c-primary-hover", hexToRgbChannels(darken(primary), "#093A19"));
+        root.setProperty("--c-secondary", hexToRgbChannels(secondary, "#C29C29"));
+        root.setProperty("--c-secondary-hover", hexToRgbChannels(darken(secondary), "#A78420"));
 
         const [start, mid, end] = brandGradient(primary, secondary);
         root.setProperty("--g-start", start);

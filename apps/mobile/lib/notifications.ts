@@ -43,7 +43,7 @@ export async function requestPermission(): Promise<boolean> {
       name: "Rappels de prière",
       importance: Notifications.AndroidImportance.HIGH,
       vibrationPattern: [0, 250, 250, 250],
-      lightColor: "#0B7A3B",
+      lightColor: "#0C4B20",
     });
   }
   return status === "granted";

@@ -47,7 +47,7 @@ export default function LoginPage() {
           <span className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-lg bg-emerald shadow-glow">
             <Moon className="h-6 w-6 text-white" />
           </span>
-          <h1 className="font-display text-h1">Mosquée Fitia</h1>
+          <h1 className="font-display text-h1">Mosquée Fitya</h1>
           <p className="text-caption text-light-muted dark:text-dark-muted">
             Espace d&apos;administration — Petro Ivoire, Abobo
           </p>

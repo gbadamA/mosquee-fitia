@@ -205,7 +205,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Moon className="h-4 w-4 text-white" />
           </span>
           <span className="font-display text-lg font-bold leading-tight">
-            Mosquée Fitia
+            Mosquée Fitya
             <span className="block text-[11px] font-normal text-light-muted dark:text-dark-muted">
               Petro Ivoire · Abobo
             </span>
