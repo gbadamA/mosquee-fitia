@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { Moon, ArrowRight, Eye, EyeOff } from "lucide-react-native";
-import { normalizePhoneCI, phoneToAuthEmail } from "@fitia/shared";
+import { normalizePhoneCI, phoneToAuthEmail, LOGIN_FAILED_MESSAGE } from "@fitia/shared";
 import { supabase, isConfigured } from "../../lib/supabase";
 import { useMosque, useBrand } from "../../lib/mosque";
 import { useThemeColors } from "../../lib/theme";
@@ -67,10 +67,10 @@ export default function Login() {
     setBusy(false);
 
     if (authError) {
-      // Message unique volontairement : distinguer « numéro inconnu » de
-      // « mauvais mot de passe » indiquerait à un inconnu quels numéros sont
-      // enregistrés à la mosquée.
-      setError("Numéro ou mot de passe incorrect.");
+      // Message unique volontairement : distinguer « numéro inconnu », « mauvais
+      // mot de passe » ou « compte désactivé » indiquerait à un inconnu quels
+      // numéros sont enregistrés à la mosquée (cf. LOGIN_FAILED_MESSAGE).
+      setError(LOGIN_FAILED_MESSAGE);
       return;
     }
     // Le RootNavigator bascule vers (tabs) dès que la session existe.

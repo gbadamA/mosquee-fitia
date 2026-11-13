@@ -12,6 +12,17 @@
 
 export const PASSWORD_MIN_LENGTH = 8;
 
+/**
+ * Message d'échec de connexion, UNIQUE pour tous les cas.
+ *
+ * ⚠️ Auth répond « user_banned » à un compte désactivé MÊME avec un faux mot de
+ * passe (mesuré le 2026-11-13). Afficher « compte désactivé » apprendrait donc à
+ * n'importe qui qu'un numéro est enregistré à la mosquée. On mentionne la
+ * désactivation dans le message commun, sans jamais la distinguer.
+ */
+export const LOGIN_FAILED_MESSAGE =
+  "Identifiants incorrects, ou compte désactivé (adressez-vous alors au bureau).";
+
 type AuthLike = {
   auth: {
     getUser(): Promise<{ data: { user: { email?: string | null } | null } }>;

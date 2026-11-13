@@ -80,6 +80,11 @@ const off = await edge(secretaire.token, { kind: "set_access", member_id: member
 check("le secrétaire le désactive", off.status === 200 && off.body.active === false, JSON.stringify(off.body));
 const blocked = await login(authEmail(phone), initial);
 check("désactivé : connexion refusée", !blocked.ok, `${blocked.status}`);
+// Auth révèle la suspension même avec un faux mot de passe : c'est pourquoi les
+// écrans de connexion n'affichent qu'UN message (LOGIN_FAILED_MESSAGE). Si ce
+// contrôle échoue un jour, Auth a changé — le message unique reste correct.
+const wrongWhileBanned = await login(authEmail(phone), "faux-mot-de-passe");
+check("désactivé + faux mot de passe : refusé aussi", !wrongWhileBanned.ok, JSON.stringify(wrongWhileBanned.body));
 const svc = await fetch(`${BASE}/rest/v1/profiles?id=eq.${memberId}&select=status`, {
   headers: { apikey: SERVICE, Authorization: `Bearer ${SERVICE}` },
 }).then((r) => r.json());

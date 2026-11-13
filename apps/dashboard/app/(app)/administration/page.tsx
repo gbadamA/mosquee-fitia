@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ShieldCheck, Save, Building2, UserPlus } from "lucide-react";
+import { ShieldCheck, Save, Building2, UserPlus, UserX, UserCheck } from "lucide-react";
 import { ROLE_LABELS, roleSchema, type Profile, type Role } from "@fitia/shared";
 import type { MosqueRow } from "@fitia/supabase";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
@@ -27,6 +27,10 @@ export default function AdministrationPage() {
   const [newPassword, setNewPassword] = useState("");
   const [newRole, setNewRole] = useState<Role>("secretaire");
   const [busy, setBusy] = useState(false);
+
+  /** Compte dont la (dés)activation attend confirmation, et celui en cours. */
+  const [confirming, setConfirming] = useState<string | null>(null);
+  const [switching, setSwitching] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!configured) return;
@@ -57,6 +61,36 @@ export default function AdministrationPage() {
       return;
     }
     setMessage("Rôle mis à jour.");
+    load();
+  }
+
+  /**
+   * Désactive ou réactive un compte du bureau. Même action serveur que la fiche
+   * fidèle (`set_access`) : l'accès est suspendu côté Auth, le statut passe à
+   * « inactif », rien n'est supprimé. Le serveur refuse qu'on se désactive
+   * soi-même et réserve les comptes du bureau à l'imam et à l'admin.
+   */
+  async function switchAccess(person: Profile) {
+    const active = person.status === "inactif";
+    setError(null);
+    setMessage(null);
+    setSwitching(person.id);
+    const { error: failure } = await invokeEdge("create-member", {
+      kind: "set_access",
+      member_id: person.id,
+      active,
+    });
+    setSwitching(null);
+    setConfirming(null);
+    if (failure) {
+      setError(failure);
+      return;
+    }
+    setMessage(
+      active
+        ? `${person.full_name ?? "Le compte"} peut de nouveau se connecter.`
+        : `${person.full_name ?? "Le compte"} est désactivé : plus aucune connexion possible.`,
+    );
     load();
   }
 
@@ -217,17 +251,21 @@ export default function AdministrationPage() {
         </form>
       )}
       <div className="mb-10 overflow-x-auto rounded-md border border-light-border dark:border-dark-border">
-        <table className="w-full min-w-[520px] text-left text-body">
+        <table className="w-full min-w-[680px] text-left text-body">
           <thead className="bg-light-surface-alt text-caption text-light-muted dark:bg-dark-surface-alt dark:text-dark-muted">
             <tr>
               <th className="px-4 py-3">Nom</th>
               <th className="px-4 py-3">Contact</th>
               <th className="px-4 py-3">Rôle</th>
+              <th className="px-4 py-3">Accès</th>
             </tr>
           </thead>
           <tbody>
             {people.map((p) => (
-              <tr key={p.id} className="border-t border-light-border dark:border-dark-border">
+              <tr
+                key={p.id}
+                className={`border-t border-light-border dark:border-dark-border ${p.status === "inactif" ? "opacity-60" : ""}`}
+              >
                 <td className="px-4 py-3 font-medium">
                   {p.full_name ?? "Sans nom"}
                   {p.id === profile?.id && (
@@ -251,12 +289,51 @@ export default function AdministrationPage() {
                     ))}
                   </select>
                 </td>
+                <td className="px-4 py-3">
+                  {p.id === profile?.id ? (
+                    <span className="text-caption text-success">Actif</span>
+                  ) : confirming === p.id ? (
+                    <span className="flex flex-wrap items-center gap-2">
+                      <button
+                        onClick={() => switchAccess(p)}
+                        disabled={switching === p.id}
+                        className={`rounded-full px-3 py-1.5 text-caption font-medium text-white transition disabled:opacity-50 ${p.status === "inactif" ? "bg-primary hover:bg-primary-hover" : "bg-danger hover:opacity-90"}`}
+                      >
+                        {switching === p.id
+                          ? "Un instant…"
+                          : p.status === "inactif"
+                            ? "Oui, réactiver"
+                            : "Oui, désactiver"}
+                      </button>
+                      <button
+                        onClick={() => setConfirming(null)}
+                        className="text-caption text-light-muted hover:text-primary dark:text-dark-muted"
+                      >
+                        Annuler
+                      </button>
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-3">
+                      <span className={`text-caption ${p.status === "inactif" ? "text-danger" : "text-success"}`}>
+                        {p.status === "inactif" ? "Désactivé" : "Actif"}
+                      </span>
+                      <button
+                        onClick={() => setConfirming(p.id)}
+                        title={p.status === "inactif" ? "Réactiver ce compte" : "Désactiver ce compte"}
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-caption transition ${p.status === "inactif" ? "border-primary text-primary hover:bg-primary/10" : "border-danger/60 text-danger hover:bg-danger/10"}`}
+                      >
+                        {p.status === "inactif" ? <UserCheck className="h-3.5 w-3.5" /> : <UserX className="h-3.5 w-3.5" />}
+                        {p.status === "inactif" ? "Réactiver" : "Désactiver"}
+                      </button>
+                    </span>
+                  )}
+                </td>
               </tr>
             ))}
             {people.length === 0 && (
               <tr>
                 <td
-                  colSpan={3}
+                  colSpan={4}
                   className="px-4 py-8 text-center text-caption text-light-muted dark:text-dark-muted"
                 >
                   Aucun compte de bureau. Créez-en un avec{" "}

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { LogIn } from "lucide-react";
+import { LOGIN_FAILED_MESSAGE } from "@fitia/shared";
 import { useAuth } from "@/lib/auth";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
 
@@ -35,7 +36,7 @@ export default function LoginPage() {
     });
     setBusy(false);
     if (authError) {
-      setError("Identifiants incorrects.");
+      setError(LOGIN_FAILED_MESSAGE);
       return;
     }
     router.replace("/");
