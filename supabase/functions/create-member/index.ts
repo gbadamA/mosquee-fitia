@@ -9,6 +9,7 @@
  * client, même si le dashboard cache déjà le bouton aux rôles non autorisés.
  *   - fidèle       → secrétaire, imam, admin
  *   - compte staff → imam, admin uniquement
+ *   - accès (désactiver / réactiver) : mêmes règles, selon le compte visé
  *
  * Déploiement : `supabase functions deploy create-member`
  * En local, `supabase start` sert automatiquement les fonctions de `supabase/functions/`.
@@ -22,8 +23,11 @@ const CORS = {
 };
 
 type Payload = {
-  /** `reset_password` redonne un mot de passe à un fidèle déjà enregistré. */
-  kind: "fidele" | "staff" | "reset_password";
+  /**
+   * `reset_password` redonne un mot de passe à un fidèle déjà enregistré.
+   * `set_access` désactive ou réactive un compte (`active`).
+   */
+  kind: "fidele" | "staff" | "reset_password" | "set_access";
   full_name?: string;
   /** Fidèle : requis, format +225XXXXXXXXXX. */
   phone?: string;
@@ -33,8 +37,10 @@ type Payload = {
   email?: string;
   password?: string;
   role?: "secretaire" | "tresorier" | "imam" | "admin";
-  /** `reset_password` : le fidèle concerné. */
+  /** `reset_password` / `set_access` : le membre concerné. */
   member_id?: string;
+  /** `set_access` : `false` désactive le compte, `true` le réactive. */
+  active?: boolean;
 };
 
 function json(body: unknown, status = 200) {
@@ -117,6 +123,46 @@ Deno.serve(async (req: Request) => {
       : ["secretaire", "imam", "admin"];
   if (!allowed.includes(callerRole)) {
     return json({ error: "Droits insuffisants" }, 403);
+  }
+
+  // Désactivation / réactivation d'un compte.
+  //
+  // Le statut `inactif` seul ne suffit pas : il n'empêche PAS la connexion, Auth
+  // ne lit pas `profiles`. Le compte est donc aussi SUSPENDU côté Auth
+  // (`ban_duration`) : plus de connexion, plus de renouvellement de session. Une
+  // session déjà ouverte s'éteint au plus tard à l'expiration de son jeton (1 h).
+  // Rien n'est supprimé : cotisations, dons et historique restent rattachés.
+  if (payload.kind === "set_access") {
+    if (!payload.member_id || typeof payload.active !== "boolean") {
+      return json({ error: "Membre ou action non précisés" }, 400);
+    }
+    if (payload.member_id === userData.user.id) {
+      return json({ error: "Vous ne pouvez pas désactiver votre propre compte" }, 400);
+    }
+    const { data: target } = await admin
+      .from("profiles")
+      .select("role")
+      .eq("id", payload.member_id)
+      .single();
+    if (!target) return json({ error: "Membre introuvable" }, 404);
+    // Un compte du bureau ne se désactive que par l'imam ou l'admin : un
+    // secrétaire ne doit pas pouvoir écarter le trésorier ou l'imam.
+    if (target.role !== "fidele" && !["imam", "admin"].includes(callerRole)) {
+      return json({ error: "Seuls l'imam et l'administrateur gèrent les comptes du bureau" }, 403);
+    }
+
+    const { error: banError } = await admin.auth.admin.updateUserById(payload.member_id, {
+      ban_duration: payload.active ? "none" : "876000h",
+    });
+    if (banError) return json({ error: banError.message }, 400);
+
+    const { error: statusError } = await admin
+      .from("profiles")
+      .update({ status: payload.active ? "actif" : "inactif" })
+      .eq("id", payload.member_id);
+    if (statusError) return json({ error: statusError.message }, 400);
+
+    return json({ active: payload.active });
   }
 
   // Réattribution d'un mot de passe à un fidèle existant. Nécessaire pour tous

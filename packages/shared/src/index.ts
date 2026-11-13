@@ -10,3 +10,4 @@ export * from "./event";
 export * from "./communication";
 export * from "./patrimoine";
 export * from "./attestation";
+export * from "./password";

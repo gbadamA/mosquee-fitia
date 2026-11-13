@@ -21,6 +21,7 @@ import {
   UsersRound,
   ShieldCheck,
   LogOut,
+  KeyRound,
   ShieldAlert,
   Moon,
   Sun,
@@ -315,6 +316,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <p className="mb-3 px-3 text-caption text-primary">
             {profile ? ROLE_LABELS[profile.role] : ""}
           </p>
+          <Link
+            href="/mot-de-passe"
+            className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-caption text-light-muted transition hover:text-primary dark:text-dark-muted"
+          >
+            <KeyRound className="h-4 w-4" /> Mon mot de passe
+          </Link>
           <button
             onClick={signOut}
             className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-caption text-light-muted transition hover:text-danger dark:text-dark-muted"

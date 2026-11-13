@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { X, Save, Receipt, KeyRound } from "lucide-react";
+import { X, Save, Receipt, KeyRound, UserX, UserCheck } from "lucide-react";
 import {
   formatFCFA,
   formatPhoneCI,
@@ -29,7 +29,12 @@ import { invokeEdge } from "@/lib/edge";
  * la RLS `is_admin()` refuserait de toute façon la requête d'un secrétaire.
  */
 
-const STATUSES = Object.keys(MEMBER_STATUS_LABELS) as MemberStatus[];
+/**
+ * « Inactif » n'est PAS proposé dans la liste : posé seul, ce statut laissait le
+ * membre se connecter (Auth ne lit pas `profiles`). Il passe par le bouton
+ * « Désactiver le compte », qui suspend aussi l'accès côté serveur.
+ */
+const STATUSES = (Object.keys(MEMBER_STATUS_LABELS) as MemberStatus[]).filter((s) => s !== "inactif");
 const CATEGORIES = Object.keys(MEMBER_CATEGORY_LABELS) as MemberCategory[];
 const ROLES: Role[] = ["fidele", "secretaire", "tresorier", "imam", "admin"];
 
@@ -74,6 +79,11 @@ export default function MemberDrawer({
   /** Mot de passe fraîchement émis — visible une seule fois. */
   const [issued, setIssued] = useState<string | null>(null);
   const [issuing, setIssuing] = useState(false);
+
+  /** Compte désactivé : suit la fiche, puis la réponse du serveur. */
+  const [inactive, setInactive] = useState(member.status === "inactif");
+  const [confirmAccess, setConfirmAccess] = useState(false);
+  const [switching, setSwitching] = useState(false);
 
   useEffect(() => {
     const supabase = getSupabase();
@@ -134,6 +144,30 @@ export default function MemberDrawer({
     setIssued(data?.password ?? null);
   }
 
+  /**
+   * Désactive ou réactive le compte. Passe par la fonction serveur : elle suspend
+   * l'accès côté Auth (plus de connexion) et pose le statut, sans rien supprimer.
+   */
+  async function switchAccess() {
+    setSwitching(true);
+    setError(null);
+    const { error: failure } = await invokeEdge<{ active: boolean }>("create-member", {
+      kind: "set_access",
+      member_id: member.id,
+      active: inactive,
+    });
+    setSwitching(false);
+    setConfirmAccess(false);
+    if (failure) {
+      setError(failure);
+      return;
+    }
+    const nowInactive = !inactive;
+    setInactive(nowInactive);
+    setStatus(nowInactive ? "inactif" : "actif");
+    onSaved();
+  }
+
   async function save() {
     setError(null);
     setSaved(false);
@@ -143,7 +177,7 @@ export default function MemberDrawer({
       full_name: fullName.trim() || null,
       quartier: quartier.trim() || null,
       email: email.trim() || null,
-      status,
+      ...(inactive ? {} : { status }),
       category,
     };
     // On n'envoie `role` que si l'utilisateur a le droit de le changer :
@@ -257,6 +291,9 @@ export default function MemberDrawer({
                 <label className="mb-1.5 block text-caption text-light-muted dark:text-dark-muted">
                   Statut
                 </label>
+                {inactive ? (
+                  <p className={`${field} text-danger`}>Désactivé</p>
+                ) : (
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value as MemberStatus)}
@@ -268,6 +305,7 @@ export default function MemberDrawer({
                     </option>
                   ))}
                 </select>
+                )}
               </div>
               <div>
                 <label className="mb-1.5 block text-caption text-light-muted dark:text-dark-muted">
@@ -341,6 +379,48 @@ export default function MemberDrawer({
                 {issuing ? "Émission…" : "Émettre un mot de passe"}
               </button>
             )}
+
+            <div className="mt-4 border-t border-light-border pt-4 dark:border-dark-border">
+              {inactive ? (
+                <p className="mb-3 text-caption text-danger">
+                  Compte désactivé : ce membre ne peut plus se connecter. Son historique est conservé.
+                </p>
+              ) : (
+                <p className="mb-3 text-caption text-light-muted dark:text-dark-muted">
+                  Désactiver bloque aussitôt toute nouvelle connexion (une session ouverte
+                  s&apos;éteint dans l&apos;heure). Rien n&apos;est supprimé ; le compte se réactive à tout moment.
+                </p>
+              )}
+
+              {confirmAccess ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-caption">
+                    {inactive ? "Réactiver ce compte ?" : "Désactiver ce compte ?"}
+                  </span>
+                  <button
+                    onClick={switchAccess}
+                    disabled={switching}
+                    className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-caption font-medium text-white transition disabled:opacity-50 ${inactive ? "bg-primary hover:bg-primary-hover" : "bg-danger hover:opacity-90"}`}
+                  >
+                    {switching ? "Un instant…" : inactive ? "Oui, réactiver" : "Oui, désactiver"}
+                  </button>
+                  <button
+                    onClick={() => setConfirmAccess(false)}
+                    className="rounded-full px-3 py-2 text-caption text-light-muted hover:text-primary dark:text-dark-muted"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmAccess(true)}
+                  className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-caption transition ${inactive ? "border-primary text-primary hover:bg-primary/10" : "border-danger/60 text-danger hover:bg-danger/10"}`}
+                >
+                  {inactive ? <UserCheck className="h-3.5 w-3.5" /> : <UserX className="h-3.5 w-3.5" />}
+                  {inactive ? "Réactiver le compte" : "Désactiver le compte"}
+                </button>
+              )}
+            </div>
           </div>
 
           <h3 className="mb-2 font-display text-h3">Historique des versements</h3>

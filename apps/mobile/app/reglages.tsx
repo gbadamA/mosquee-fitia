@@ -10,6 +10,7 @@ import { useSettings, PRAYER_DELAYS } from "../lib/settings";
 import { schedulePrayerReminders, cancelPrayerReminders } from "../lib/notifications";
 import { readCache, CACHE_KEYS } from "../lib/cache";
 import type { PrayerTimes } from "@fitia/shared";
+import { ChangerMotDePasse } from "../components/ChangerMotDePasse";
 
 const THEMES: { key: ThemeMode; label: string; icon: typeof Sun }[] = [
   { key: "light", label: "Clair", icon: Sun },
@@ -189,6 +190,14 @@ export default function Reglages() {
               trackColor={{ true: brandColors.primary, false: colors.border }}
             />
           </View>
+        </View>
+
+        {/* Compte */}
+        <View>
+          <Text className="mb-2 font-display text-lg font-semibold text-light-text dark:text-dark-text">
+            Mot de passe
+          </Text>
+          <ChangerMotDePasse primary={brandColors.primary} />
         </View>
 
         {/* Avertissement honnête sur les push distantes */}

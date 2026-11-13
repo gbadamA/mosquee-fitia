@@ -133,7 +133,10 @@ export default function Login() {
             value={password}
             onChangeText={setPassword}
             secureTextEntry={!reveal}
-            autoCapitalize="characters"
+            // Pas de majuscules forcées : depuis Réglages, un fidèle peut choisir
+            // un mot de passe avec des minuscules — le clavier les aurait
+            // changées et il n'entrerait plus jamais.
+            autoCapitalize="none"
             autoCorrect={false}
             placeholder="••••••••"
             placeholderTextColor={colors.textMuted}

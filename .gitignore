@@ -24,3 +24,5 @@ deploy/vps/sauvegardes/
 apps/mobile/.env.dev-local
 # Projet natif régénéré par `expo prebuild` (APK local).
 apps/mobile/android/
+# Fichiers d APK construits en local.
+*.apk
