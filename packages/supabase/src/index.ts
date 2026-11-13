@@ -25,6 +25,8 @@ export type MessageLogRow = Tables["message_log"]["Row"];
 export type AssetEventRow = Tables["asset_events"]["Row"];
 export type AttestationRow = Tables["attestations"]["Row"];
 export type MosqueRow = Tables["mosque"]["Row"];
+export type ConsigneRow = Tables["consignes"]["Row"];
+export type ConsigneSuiviRow = Tables["consigne_suivis"]["Row"];
 
 /**
  * Factory unique du client, utilisée par le mobile (Expo) ET le dashboard (Next.js).

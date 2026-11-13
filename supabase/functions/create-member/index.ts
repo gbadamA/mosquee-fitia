@@ -36,7 +36,7 @@ type Payload = {
   /** Staff : requis. */
   email?: string;
   password?: string;
-  role?: "secretaire" | "tresorier" | "imam" | "admin";
+  role?: "membre_staff" | "secretaire" | "tresorier" | "imam" | "admin";
   /** `reset_password` / `set_access` : le membre concerné. */
   member_id?: string;
   /** `set_access` : `false` désactive le compte, `true` le réactive. */
@@ -170,6 +170,15 @@ Deno.serve(async (req: Request) => {
   // définitivement enfermés dehors.
   if (payload.kind === "reset_password") {
     if (!payload.member_id) return json({ error: "Fidèle non précisé" }, 400);
+
+    // Sans ce contrôle, un secrétaire pouvait redonner un mot de passe au compte
+    // de l'imam… et se connecter à sa place. Les comptes du staff (bureau et
+    // terrain) ne se réinitialisent que par l'imam ou l'admin.
+    const { data: cible } = await admin.from("profiles").select("role").eq("id", payload.member_id).single();
+    if (!cible) return json({ error: "Membre introuvable" }, 404);
+    if (cible.role !== "fidele" && !["imam", "admin"].includes(callerRole)) {
+      return json({ error: "Seuls l'imam et l'administrateur redonnent un mot de passe au staff" }, 403);
+    }
 
     const password = makePassword();
     const { error: resetError } = await admin.auth.admin.updateUserById(payload.member_id, {

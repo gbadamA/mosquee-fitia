@@ -27,6 +27,7 @@ import {
   Sun,
   MonitorSmartphone,
   ChevronDown,
+  ClipboardList,
 } from "lucide-react";
 import { ROLE_LABELS, type Role } from "@fitia/shared";
 import { useAuth, DASHBOARD_ROLES } from "@/lib/auth";
@@ -71,6 +72,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Vie de la mosquée",
     icon: Clock,
     items: [
+      { href: "/consignes", label: "Consignes au staff", icon: ClipboardList, roles: ALL },
       { href: "/horaires", label: "Horaires de prière", icon: Clock, roles: ADMIN },
       { href: "/frequentation", label: "Fréquentation", icon: UsersRound, roles: ALL },
     ],

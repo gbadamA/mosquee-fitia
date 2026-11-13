@@ -1,6 +1,6 @@
 import { Tabs } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Clock, Megaphone, CalendarDays, User } from "lucide-react-native";
+import { Clock, Megaphone, CalendarDays, LayoutGrid } from "lucide-react-native";
 import { useMosque, useBrand } from "../../lib/mosque";
 import { useThemeColors } from "../../lib/theme";
 
@@ -55,8 +55,8 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="profil"
         options={{
-          title: "Profil",
-          tabBarIcon: ({ color, size }) => <User color={color} size={size} />,
+          title: "Plus",
+          tabBarIcon: ({ color, size }) => <LayoutGrid color={color} size={size} />,
         }}
       />
     </Tabs>

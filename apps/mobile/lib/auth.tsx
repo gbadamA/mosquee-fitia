@@ -1,8 +1,8 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
-import type { Profile } from "@fitia/shared";
+import { MOBILE_STAFF_ROLES, type Profile } from "@fitia/shared";
 import { supabase } from "./supabase";
-import { registerPushToken } from "./push";
+import { registerDevicePush, registerPushToken } from "./push";
 
 type AuthState = {
   session: Session | null;
@@ -25,10 +25,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  /**
+   * Depuis le 2026-11-14 seul le STAFF se connecte : une ancienne session de
+   * fidèle restée sur un téléphone est fermée, l'application reste ouverte en
+   * accès libre.
+   */
   async function loadProfile(userId: string) {
     if (!supabase) return;
     const { data } = await supabase.from("profiles").select("*").eq("id", userId).single();
-    setProfile((data as Profile) ?? null);
+    const p = (data as Profile) ?? null;
+    if (!p || !MOBILE_STAFF_ROLES.includes(p.role)) {
+      await supabase.auth.signOut();
+      setProfile(null);
+      return;
+    }
+    setProfile(p);
+    registerPushToken(userId).catch(() => {});
   }
 
   useEffect(() => {
@@ -36,21 +48,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       return;
     }
+    // Tout téléphone reçoit les annonces, connecté ou non.
+    registerDevicePush().catch(() => {});
     supabase.auth.getSession().then(async ({ data }) => {
       setSession(data.session);
-      if (data.session) {
-        await loadProfile(data.session.user.id);
-        registerPushToken(data.session.user.id).catch(() => {});
-      }
+      if (data.session) await loadProfile(data.session.user.id);
       setLoading(false);
     });
 
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
       setSession(s);
-      if (s) {
-        loadProfile(s.user.id);
-        registerPushToken(s.user.id).catch(() => {});
-      } else setProfile(null);
+      if (s) loadProfile(s.user.id);
+      else setProfile(null);
     });
     return () => sub.subscription.unsubscribe();
   }, []);

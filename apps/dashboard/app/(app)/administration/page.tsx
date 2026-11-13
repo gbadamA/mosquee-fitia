@@ -10,7 +10,8 @@ import { useAuth } from "@/lib/auth";
 
 const ROLES = roleSchema.options as readonly Role[];
 /** Rôles attribuables à un compte de back-office (un fidèle n'a pas d'accès web). */
-const STAFF_ROLES: Role[] = ["secretaire", "tresorier", "imam", "admin"];
+/** Comptes créés ici : le staff de terrain (application mobile seule) et le bureau. */
+const STAFF_ROLES: Role[] = ["membre_staff", "secretaire", "tresorier", "imam", "admin"];
 
 export default function AdministrationPage() {
   const { profile } = useAuth();
@@ -25,7 +26,7 @@ export default function AdministrationPage() {
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [newRole, setNewRole] = useState<Role>("secretaire");
+  const [newRole, setNewRole] = useState<Role>("membre_staff");
   const [busy, setBusy] = useState(false);
 
   /** Compte dont la (dés)activation attend confirmation, et celui en cours. */

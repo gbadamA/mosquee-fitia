@@ -1,7 +1,6 @@
 import "../global.css";
-import { useEffect } from "react";
 import { View, ActivityIndicator } from "react-native";
-import { Stack, useRouter, useSegments } from "expo-router";
+import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -10,19 +9,15 @@ import { AuthProvider, useAuth } from "../lib/auth";
 import { ThemeProvider, useTheme, useThemeColors } from "../lib/theme";
 import { SettingsProvider } from "../lib/settings";
 
+/**
+ * L'application s'ouvre SANS connexion (2026-11-14) : horaires, annonces,
+ * agenda et dons sont publics. Seul le staff se connecte, depuis l'onglet
+ * « Plus », et retrouve ses écrans sous `/staff` (gardés par leur propre layout).
+ */
 function RootNavigator() {
-  const { session, loading } = useAuth();
+  const { loading } = useAuth();
   const { resolved } = useTheme();
   const colors = useThemeColors();
-  const segments = useSegments();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (loading) return;
-    const inAuth = segments[0] === "(auth)";
-    if (!session && !inAuth) router.replace("/(auth)/login");
-    else if (session && inAuth) router.replace("/(tabs)");
-  }, [session, loading, segments]);
 
   if (loading) {
     return (
@@ -42,8 +37,9 @@ function RootNavigator() {
           contentStyle: { backgroundColor: colors.bg },
         }}
       >
-        <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="(auth)" options={{ presentation: "modal" }} />
+        <Stack.Screen name="staff" />
         <Stack.Screen name="don" options={{ presentation: "modal" }} />
         <Stack.Screen name="reglages" options={{ presentation: "modal" }} />
         <Stack.Screen name="administration" options={{ presentation: "modal" }} />

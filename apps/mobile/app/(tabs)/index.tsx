@@ -19,13 +19,11 @@ import { supabase, isConfigured } from "../../lib/supabase";
 import { readCache, writeCache, CACHE_KEYS } from "../../lib/cache";
 import { schedulePrayerReminders, cancelPrayerReminders } from "../../lib/notifications";
 import { useMosque, useBrand, callMosque } from "../../lib/mosque";
-import { useAuth } from "../../lib/auth";
 import { useSettings } from "../../lib/settings";
 import { useThemeColors } from "../../lib/theme";
 
 export default function Prieres() {
   const colors = useThemeColors();
-  const { profile } = useAuth();
   const mosque = useMosque();
   const brandColors = useBrand(mosque);
   const router = useRouter();
@@ -129,7 +127,7 @@ export default function Prieres() {
           <SafeAreaView edges={["top"]}>
             <View className="px-5 pb-7 pt-3">
               <Text className="text-white/80">
-                As-salâmu ʿalaykum{profile?.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}
+                As-salâmu ʿalaykum
               </Text>
               <Text className="mb-4 text-caption text-white/70">
                 {new Intl.DateTimeFormat("fr-FR", { dateStyle: "full" }).format(new Date(tick))}

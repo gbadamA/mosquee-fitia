@@ -3,19 +3,21 @@ import { View, Text, FlatList, RefreshControl, Pressable, ActivityIndicator } fr
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInDown } from "react-native-reanimated";
-import { Check, Plus, MapPin } from "lucide-react-native";
+import { BellRing, Bell, MapPin } from "lucide-react-native";
 import { EVENT_TYPE_META, formatEventDate, type MosqueEvent } from "@fitia/shared";
 import { brand } from "@fitia/design-tokens";
 import { supabase } from "../../lib/supabase";
 import { useMosque, useBrand } from "../../lib/mosque";
 import { scheduleEventReminders, cancelEventReminders } from "../../lib/notifications";
-import { useAuth } from "../../lib/auth";
+import { readCache, writeCache } from "../../lib/cache";
 import { useSettings } from "../../lib/settings";
 import { useThemeColors } from "../../lib/theme";
 
+/** Événements pour lesquels CE téléphone a demandé un rappel. */
+const CLE_RAPPELS = "fitia.rappels-evenements";
+
 export default function Agenda() {
   const colors = useThemeColors();
-  const { session } = useAuth();
   const { settings } = useSettings();
   const mosque = useMosque();
   const brandColors = useBrand(mosque);
@@ -26,17 +28,16 @@ export default function Agenda() {
 
   const load = useCallback(async () => {
     if (!supabase) return;
-    const [{ data: evs }, { data: regs }] = await Promise.all([
+    const [{ data: evs }, rappels] = await Promise.all([
       supabase
         .from("events")
         .select("*")
         .gte("starts_at", new Date().toISOString())
         .order("starts_at", { ascending: true }),
-      supabase.from("event_registrations").select("event_id"),
+      readCache<string[]>(CLE_RAPPELS),
     ]);
     if (evs) setEvents(evs as MosqueEvent[]);
-    // La RLS ne renvoie que MES inscriptions : pas besoin de filtrer côté client.
-    if (regs) setRegistered(new Set(regs.map((r) => r.event_id)));
+    setRegistered(new Set(rappels ?? []));
   }, []);
 
   useEffect(() => {
@@ -52,33 +53,27 @@ export default function Agenda() {
     };
   }, [load]);
 
+  /**
+   * « Me rappeler » : l'application s'ouvre sans compte depuis le 2026-11-14,
+   * l'inscription en base (liée à un compte) disparaît. Le choix est gardé SUR
+   * LE TÉLÉPHONE, avec les mêmes rappels locaux (la veille et 1 h avant).
+   */
   async function toggle(eventId: string) {
-    if (!supabase || !session) return;
     setBusyId(eventId);
-
-    if (registered.has(eventId)) {
-      await supabase
-        .from("event_registrations")
-        .delete()
-        .eq("event_id", eventId)
-        .eq("member_id", session.user.id);
-      // Désinscription : on retire les rappels planifiés.
+    const suivants = new Set(registered);
+    if (suivants.has(eventId)) {
+      suivants.delete(eventId);
       cancelEventReminders(eventId).catch(() => {});
     } else {
-      const { error } = await supabase
-        .from("event_registrations")
-        .insert({ event_id: eventId, member_id: session.user.id });
-      // Rappels locaux la veille et 1 h avant. Échoue en silence si les
-      // notifications sont refusées : ça ne doit jamais bloquer l'inscription.
+      suivants.add(eventId);
       const event = events.find((e) => e.id === eventId);
-      // Respecte la préférence du fidèle (écran Réglages).
-      if (!error && event && settings.eventReminders) {
-        scheduleEventReminders(event).catch(() => {});
-      }
+      // Respecte la préférence de l'utilisateur (écran Réglages) ; échoue en
+      // silence si les notifications sont refusées.
+      if (event && settings.eventReminders) scheduleEventReminders(event).catch(() => {});
     }
-
+    setRegistered(suivants);
+    await writeCache(CLE_RAPPELS, [...suivants]);
     setBusyId(null);
-    load();
   }
 
   return (
@@ -162,14 +157,14 @@ export default function Agenda() {
                 ) : (
                   <>
                     {isIn ? (
-                      <Check color={brand.primary} size={16} />
+                      <BellRing color={brand.primary} size={16} />
                     ) : (
-                      <Plus color="#fff" size={16} />
+                      <Bell color="#fff" size={16} />
                     )}
                     <Text
                       className={`font-semibold ${isIn ? "text-primary" : "text-white"}`}
                     >
-                      {isIn ? "Inscrit" : "S'inscrire"}
+                      {isIn ? "Rappel activé" : "Me rappeler"}
                     </Text>
                   </>
                 )}

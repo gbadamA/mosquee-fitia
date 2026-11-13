@@ -43,6 +43,9 @@ type Pending = {
   memberId: string | null;
   /** Justificatif joint par le fidèle depuis le mobile (bucket `justificatifs`). */
   proofPath: string | null;
+  /** Don déclaré SANS compte depuis l'application (2026-11-14) : nom et numéro facultatifs. */
+  donorName?: string | null;
+  donorPhone?: string | null;
 };
 
 const EXPENSE_CATEGORIES = Object.keys(EXPENSE_CATEGORY_LABELS) as ExpenseCategory[];
@@ -159,6 +162,8 @@ export default function FinancesPage() {
         created_at: d.created_at,
         // Sert à l'affichage du nom ; un don peut être anonyme.
         memberId: d.donor_id,
+        donorName: d.donor_name,
+        donorPhone: d.donor_phone,
       })),
   ].sort((a, b) => b.created_at.localeCompare(a.created_at));
 
@@ -189,6 +194,7 @@ export default function FinancesPage() {
         detail: DONATION_TYPE_LABELS[d.type],
         created_at: d.created_at,
         memberId: d.anonymous ? null : d.donor_id,
+        donorName: d.anonymous ? null : d.donor_name,
       })),
   ].sort((a, b) => b.created_at.localeCompare(a.created_at));
 
@@ -551,7 +557,9 @@ export default function FinancesPage() {
               <p className="text-caption text-light-muted dark:text-dark-muted">
                 {p.memberId
                   ? (members.find((m) => m.id === p.memberId)?.full_name ?? "Fidèle")
-                  : "Donateur anonyme"}{" "}
+                  : p.donorName
+                    ? `${p.donorName}${p.donorPhone ? ` (${p.donorPhone})` : ""} · via l'application`
+                    : "Donateur anonyme"}{" "}
                 ·{" "}
                 {PAYMENT_METHOD_LABELS[p.method]} · réf.{" "}
                 <span className="font-mono">{p.reference ?? "non fournie"}</span>
@@ -665,7 +673,7 @@ export default function FinancesPage() {
                 <td className="px-4 py-3 text-caption">
                   {v.memberId
                     ? (members.find((m) => m.id === v.memberId)?.full_name ?? "Fidèle")
-                    : "Anonyme"}
+                    : (v.donorName ?? "Anonyme")}
                 </td>
                 <td className="px-4 py-3 text-caption">{PAYMENT_METHOD_LABELS[v.method]}</td>
                 <td className="px-4 py-3 text-right tabular-nums text-success">

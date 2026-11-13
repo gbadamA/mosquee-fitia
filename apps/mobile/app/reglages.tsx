@@ -11,6 +11,7 @@ import { schedulePrayerReminders, cancelPrayerReminders } from "../lib/notificat
 import { readCache, CACHE_KEYS } from "../lib/cache";
 import type { PrayerTimes } from "@fitia/shared";
 import { ChangerMotDePasse } from "../components/ChangerMotDePasse";
+import { useAuth } from "../lib/auth";
 
 const THEMES: { key: ThemeMode; label: string; icon: typeof Sun }[] = [
   { key: "light", label: "Clair", icon: Sun },
@@ -25,6 +26,8 @@ export default function Reglages() {
   const colors = useThemeColors();
   const { mode, setMode } = useTheme();
   const { settings, update } = useSettings();
+  /** Le mot de passe ne concerne que le staff connecté (l'app est ouverte à tous). */
+  const { profile } = useAuth();
 
   /**
    * Toute modification des rappels de prière doit REPLANIFIER immédiatement :
@@ -192,13 +195,18 @@ export default function Reglages() {
           </View>
         </View>
 
-        {/* Compte */}
-        <View>
-          <Text className="mb-2 font-display text-lg font-semibold text-light-text dark:text-dark-text">
-            Mot de passe
-          </Text>
-          <ChangerMotDePasse primary={brandColors.primary} />
-        </View>
+        {profile ? (
+          <>
+            {/* Compte */}
+            <View>
+              <Text className="mb-2 font-display text-lg font-semibold text-light-text dark:text-dark-text">
+                Mot de passe
+              </Text>
+              <ChangerMotDePasse primary={brandColors.primary} />
+            </View>
+
+          </>
+        ) : null}
 
         {/* Avertissement honnête sur les push distantes */}
         <View className="flex-row gap-3 rounded-md border border-light-border dark:border-dark-border bg-light-surface dark:bg-dark-surface p-4">

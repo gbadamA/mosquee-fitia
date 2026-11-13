@@ -295,6 +295,66 @@ export type Database = {
           },
         ]
       }
+      consignes: {
+        Row: {
+          archived: boolean
+          assignee_id: string | null
+          body: string | null
+          created_at: string
+          created_by: string | null
+          due_date: string | null
+          id: string
+          priority: string
+          title: string
+        }
+        Insert: {
+          archived?: boolean
+          assignee_id?: string | null
+          body?: string | null
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string
+          title: string
+        }
+        Update: {
+          archived?: boolean
+          assignee_id?: string | null
+          body?: string | null
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      consigne_suivis: {
+        Row: {
+          consigne_id: string
+          member_id: string
+          report: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          consigne_id: string
+          member_id?: string
+          report?: string | null
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          consigne_id?: string
+          member_id?: string
+          report?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       contributions: {
         Row: {
           amount: number
@@ -395,6 +455,8 @@ export type Database = {
       }
       donations: {
         Row: {
+          donor_name: string | null
+          donor_phone: string | null
           amount: number
           anonymous: boolean
           campaign_id: string | null
@@ -410,6 +472,8 @@ export type Database = {
           validated_by: string | null
         }
         Insert: {
+          donor_name?: string | null
+          donor_phone?: string | null
           amount: number
           anonymous?: boolean
           campaign_id?: string | null
@@ -425,6 +489,8 @@ export type Database = {
           validated_by?: string | null
         }
         Update: {
+          donor_name?: string | null
+          donor_phone?: string | null
           amount?: number
           anonymous?: boolean
           campaign_id?: string | null
@@ -894,6 +960,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      is_mobile_staff: { Args: Record<PropertyKey, never>; Returns: boolean }
+      is_bureau: { Args: Record<PropertyKey, never>; Returns: boolean }
+      register_push_device: { Args: { p_token: string }; Returns: undefined }
       auth_role: {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"]
@@ -1004,7 +1073,7 @@ export type Database = {
         | "especes"
         | "virement"
       payment_status: "en_attente" | "valide" | "rejete"
-      user_role: "fidele" | "secretaire" | "tresorier" | "imam" | "admin"
+      user_role: "fidele" | "membre_staff" | "secretaire" | "tresorier" | "imam" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
