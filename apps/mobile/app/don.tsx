@@ -32,6 +32,7 @@ import { useMosque, useBrand } from "../lib/mosque";
 import { pickProof, captureProof, uploadProof, type PickedProof } from "../lib/proof";
 import { useAuth } from "../lib/auth";
 import { useThemeColors } from "../lib/theme";
+import { CoordonneesDons } from "../components/CoordonneesDons";
 
 /**
  * Déclaration d'un versement Mobile Money — modèle « preuve de paiement ».
@@ -278,12 +279,14 @@ export default function Don() {
         className="flex-1"
       >
         <ScrollView contentContainerClassName="p-4 gap-5">
-          {/* Mode d'emploi — indispensable, c'est un flux en 2 temps. */}
+          {/* 1. Où donner : Wave (QR + bouton), Mobile Money, virement. */}
+          <CoordonneesDons mosque={mosque} primary={brandColors.primary} />
+
+          {/* 2. Mode d'emploi — indispensable, c'est un flux en 2 temps. */}
           <View className="flex-row gap-3 rounded-md border border-light-border dark:border-dark-border bg-light-surface dark:bg-dark-surface p-4">
             <Info color={brand.tertiary} size={18} />
             <Text className="flex-1 text-caption text-light-muted dark:text-dark-muted">
-              Effectuez d&apos;abord le transfert depuis votre application Mobile Money,
-              puis saisissez ici le <Text className="text-light-text dark:text-dark-text">numéro de transaction</Text> reçu
+              Après votre don (Wave, Mobile Money ou virement), déclarez-le ci-dessous en saisissant le <Text className="text-light-text dark:text-dark-text">numéro de transaction</Text> reçu
               par SMS. Le trésorier valide ensuite votre versement.
             </Text>
           </View>

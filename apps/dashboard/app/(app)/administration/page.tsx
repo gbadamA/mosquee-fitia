@@ -137,6 +137,13 @@ export default function AdministrationPage() {
     if (!mosque) return;
     setError(null);
     setMessage(null);
+    // Même règle que la contrainte en base : un lien qui ne mène pas chez Wave
+    // enverrait les dons des fidèles ailleurs.
+    const wave = mosque.wave_payment_url?.trim();
+    if (wave && !/^https:\/\/pay\.wave\.com\//.test(wave)) {
+      setError("Le lien Wave doit commencer par https://pay.wave.com/ (lien du QR code de la mosquée).");
+      return;
+    }
     const { error: dbError } = await getSupabase()
       .from("mosque")
       .update({
@@ -149,6 +156,17 @@ export default function AdministrationPage() {
         secondary_color: mosque.secondary_color,
         contribution_amount: mosque.contribution_amount,
         contribution_due_day: mosque.contribution_due_day,
+        wave_payment_url: mosque.wave_payment_url?.trim() || null,
+        mtn_money_number: mosque.mtn_money_number?.trim() || null,
+        orange_money_number: mosque.orange_money_number?.trim() || null,
+        bank_name: mosque.bank_name?.trim() || null,
+        bank_code: mosque.bank_code?.trim() || null,
+        bank_branch_code: mosque.bank_branch_code?.trim() || null,
+        bank_account_number: mosque.bank_account_number?.trim() || null,
+        bank_rib_key: mosque.bank_rib_key?.trim() || null,
+        bank_iban: mosque.bank_iban?.trim() || null,
+        bank_swift: mosque.bank_swift?.trim() || null,
+        bank_address: mosque.bank_address?.trim() || null,
       })
       .eq("id", mosque.id);
     if (dbError) {
@@ -406,6 +424,131 @@ export default function AdministrationPage() {
                 placeholder="+225…"
                 className={field}
               />
+            </div>
+          </div>
+
+          {/* Coordonnées de dons — affichées aux fidèles dans l'application (écran Don). */}
+          <div className="mb-5 rounded-md border border-light-border p-4 dark:border-dark-border">
+            <p className="mb-1 font-medium">Coordonnées des dons</p>
+            <p className="mb-3 text-caption text-light-muted dark:text-dark-muted">
+              Montrées aux fidèles dans l&apos;application : QR code Wave (généré à partir du lien
+              ci-dessous), numéros Mobile Money et virement bancaire. Vérifiez-les avec soin :
+              une erreur enverrait les dons ailleurs.
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <label className="mb-1.5 block text-caption text-light-muted dark:text-dark-muted">
+                  Lien de paiement Wave (celui du QR code)
+                </label>
+                <input
+                  value={mosque.wave_payment_url ?? ""}
+                  onChange={(e) => setMosque({ ...mosque, wave_payment_url: e.target.value })}
+                  placeholder="https://pay.wave.com/…"
+                  className={field}
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-caption text-light-muted dark:text-dark-muted">
+                  Numéro MTN Mobile Money
+                </label>
+                <input
+                  value={mosque.mtn_money_number ?? ""}
+                  onChange={(e) => setMosque({ ...mosque, mtn_money_number: e.target.value })}
+                  placeholder="05 …"
+                  className={field}
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-caption text-light-muted dark:text-dark-muted">
+                  Numéro Orange Money
+                </label>
+                <input
+                  value={mosque.orange_money_number ?? ""}
+                  onChange={(e) => setMosque({ ...mosque, orange_money_number: e.target.value })}
+                  placeholder="07 …"
+                  className={field}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="mb-1.5 block text-caption text-light-muted dark:text-dark-muted">
+                  Banque
+                </label>
+                <input
+                  value={mosque.bank_name ?? ""}
+                  onChange={(e) => setMosque({ ...mosque, bank_name: e.target.value })}
+                  className={field}
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-caption text-light-muted dark:text-dark-muted">
+                  Code banque
+                </label>
+                <input
+                  value={mosque.bank_code ?? ""}
+                  onChange={(e) => setMosque({ ...mosque, bank_code: e.target.value })}
+                  className={field}
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-caption text-light-muted dark:text-dark-muted">
+                  Code guichet
+                </label>
+                <input
+                  value={mosque.bank_branch_code ?? ""}
+                  onChange={(e) => setMosque({ ...mosque, bank_branch_code: e.target.value })}
+                  className={field}
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-caption text-light-muted dark:text-dark-muted">
+                  Numéro de compte
+                </label>
+                <input
+                  value={mosque.bank_account_number ?? ""}
+                  onChange={(e) => setMosque({ ...mosque, bank_account_number: e.target.value })}
+                  className={field}
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-caption text-light-muted dark:text-dark-muted">
+                  Clé RIB
+                </label>
+                <input
+                  value={mosque.bank_rib_key ?? ""}
+                  onChange={(e) => setMosque({ ...mosque, bank_rib_key: e.target.value })}
+                  className={field}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="mb-1.5 block text-caption text-light-muted dark:text-dark-muted">
+                  IBAN
+                </label>
+                <input
+                  value={mosque.bank_iban ?? ""}
+                  onChange={(e) => setMosque({ ...mosque, bank_iban: e.target.value })}
+                  className={field}
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-caption text-light-muted dark:text-dark-muted">
+                  SWIFT / BIC
+                </label>
+                <input
+                  value={mosque.bank_swift ?? ""}
+                  onChange={(e) => setMosque({ ...mosque, bank_swift: e.target.value })}
+                  className={field}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="mb-1.5 block text-caption text-light-muted dark:text-dark-muted">
+                  Adresse (sur le RIB)
+                </label>
+                <input
+                  value={mosque.bank_address ?? ""}
+                  onChange={(e) => setMosque({ ...mosque, bank_address: e.target.value })}
+                  className={field}
+                />
+              </div>
             </div>
           </div>
 

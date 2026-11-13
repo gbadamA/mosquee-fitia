@@ -703,6 +703,17 @@ export type Database = {
       }
       mosque: {
         Row: {
+          wave_payment_url: string | null
+          mtn_money_number: string | null
+          orange_money_number: string | null
+          bank_name: string | null
+          bank_code: string | null
+          bank_branch_code: string | null
+          bank_account_number: string | null
+          bank_rib_key: string | null
+          bank_iban: string | null
+          bank_swift: string | null
+          bank_address: string | null
           address: string | null
           city: string | null
           contribution_amount: number
@@ -720,6 +731,17 @@ export type Database = {
           whatsapp: string | null
         }
         Insert: {
+          wave_payment_url?: string | null
+          mtn_money_number?: string | null
+          orange_money_number?: string | null
+          bank_name?: string | null
+          bank_code?: string | null
+          bank_branch_code?: string | null
+          bank_account_number?: string | null
+          bank_rib_key?: string | null
+          bank_iban?: string | null
+          bank_swift?: string | null
+          bank_address?: string | null
           address?: string | null
           city?: string | null
           contribution_amount?: number
@@ -737,6 +759,17 @@ export type Database = {
           whatsapp?: string | null
         }
         Update: {
+          wave_payment_url?: string | null
+          mtn_money_number?: string | null
+          orange_money_number?: string | null
+          bank_name?: string | null
+          bank_code?: string | null
+          bank_branch_code?: string | null
+          bank_account_number?: string | null
+          bank_rib_key?: string | null
+          bank_iban?: string | null
+          bank_swift?: string | null
+          bank_address?: string | null
           address?: string | null
           city?: string | null
           contribution_amount?: number
