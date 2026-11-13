@@ -17,3 +17,10 @@ google-services.json
 **/google-services.json
 *-firebase-adminsdk-*.json
 service-account*.json
+
+# VPS : sauvegardes et identifiants.
+deploy/vps/sauvegardes/
+*.secret.md
+apps/mobile/.env.dev-local
+# Projet natif régénéré par `expo prebuild` (APK local).
+apps/mobile/android/

@@ -1,0 +1,32 @@
+# Tableau de bord de la Mosquée Fitya sur le VPS FITYA (Contabo)
+#   https://mosquee.fityalogisticgroup.com
+#
+# Le BACKEND est le Supabase auto-hébergé de /opt/apps/mosquee/supabase
+# (projet Compose `mosquee-supabase`), servi par Caddy sur
+# https://api-mosquee.fityalogisticgroup.com. Ce compose n'héberge que le
+# tableau de bord Next.js.
+#
+#   cd deploy/vps && cp .env.example .env    # clé anon = ANON_KEY du Supabase
+#   docker compose up -d --build
+#
+# Aucun port publié : Caddy (réseau externe `web`) joint le conteneur par son nom.
+
+# ⚠️ Nom de projet explicite : le dossier `vps` existe aussi pour FTL-Gestion et NotrEau.
+name: mosquee-dashboard
+
+services:
+  dashboard:
+    build:
+      context: ../..
+      dockerfile: apps/dashboard/Dockerfile
+      args:
+        # Figées dans le bundle : changer l'une ou l'autre impose de reconstruire.
+        NEXT_PUBLIC_SUPABASE_URL: https://${DOMAINE_API}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:?renseignez SUPABASE_ANON_KEY}
+    container_name: mosquee-dashboard
+    restart: unless-stopped
+    networks: [web]
+
+networks:
+  web:
+    external: true

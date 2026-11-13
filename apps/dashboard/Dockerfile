@@ -69,6 +69,9 @@ RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
 # `.next/standalone`, d'où le chemin `apps/dashboard/server.js` au démarrage.
 COPY --from=build --chown=nextjs:nodejs /app/apps/dashboard/.next/standalone ./
 COPY --from=build --chown=nextjs:nodejs /app/apps/dashboard/.next/static      ./apps/dashboard/.next/static
+# `standalone` n'embarque PAS `public/` : sans cette ligne, le logo et le
+# favicon répondent 400 en production (le logo manquait ainsi sur Render).
+COPY --from=build --chown=nextjs:nodejs /app/apps/dashboard/public            ./apps/dashboard/public
 
 USER nextjs
 
